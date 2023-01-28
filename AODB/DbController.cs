@@ -11,7 +11,7 @@ namespace AODB
     {
         public const ulong FILE_LENGTH = 0x40000000;
 
-        private Dictionary<uint, Dictionary<uint, ulong>> _records;
+        private Dictionary<uint, Dictionary<int, ulong>> _records;
 
         public Dictionary<int, BinaryReader> _dataReaders;
 
@@ -58,7 +58,7 @@ namespace AODB
 
         private void LoadRecordTypes()
         {
-            _records = new Dictionary<uint, Dictionary<uint, ulong>>();
+            _records = new Dictionary<uint, Dictionary<int, ulong>>();
 
             using (var reader = new BinaryReader(new FileStream(_idxPath, FileMode.Open)))
             {
@@ -89,10 +89,10 @@ namespace AODB
                         offset |= offset2;
 
                         uint type = (uint)reader.ReadInt32Rev();
-                        uint inst = (uint)reader.ReadInt32Rev();
+                        int inst = (int)reader.ReadInt32Rev();
 
                         if (!_records.ContainsKey(type))
-                            _records.Add(type, new Dictionary<uint, ulong>());
+                            _records.Add(type, new Dictionary<int, ulong>());
 
                         _records[type].Add(inst, offset);
                     }
@@ -107,7 +107,7 @@ namespace AODB
             }
         }
 
-        public byte[] Get(uint type, uint record)
+        public byte[] Get(uint type, int record)
         {
             if (!_records.ContainsKey(type) || !_records[type].ContainsKey(record))
                 return null;
@@ -140,7 +140,7 @@ namespace AODB
             throw new NotSupportedException();
         }
 
-        public Dictionary<uint, Dictionary<uint, ulong>> GetRecords()
+        public Dictionary<uint, Dictionary<int, ulong>> GetRecords()
         {
             return _records;
         }

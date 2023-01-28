@@ -6,17 +6,99 @@ using System.IO;
 using AODB.Common.DbClasses;
 using AODB.Common.Structs;
 using Quaternion = AODB.Common.Structs.Quaternion;
+using AVector3 = Assimp.Vector3D;
+using AQuaternion = Assimp.Quaternion;
 
 namespace AODB.Common
 {
     public class AbiffConverter
     {
+        #region Export
+
         public static Scene CreateScene(RDBMesh_t rdbMesh)
         {
             Scene scene = new Scene();
+            scene.RootNode = BuildRoot(rdbMesh);
+            BuildSceneObjects(scene, rdbMesh);
+
+            scene.Materials.Add(new Material());
+
+            Node oldRoot = scene.RootNode;
+            scene.RootNode = new Node("Root");
+            scene.RootNode.Children.Add(oldRoot);
 
             return scene;
         }
+
+        private static Node BuildRoot(RDBMesh_t rdbMesh)
+        {
+            RDBMesh_t.RRefFrame_t refFrameClass = rdbMesh.GetMember<RDBMesh_t.RRefFrame_t>();
+
+            if(refFrameClass == null)
+            {
+                return new Node("Root");
+            }
+            else
+            {
+                Node refFrame = new Node("RRefFrame");
+
+                AVector3 scale = new Vector3(refFrameClass.scale, refFrameClass.scale, refFrameClass.scale);
+                AQuaternion rotation = refFrameClass.local_rot;
+                AVector3 position = refFrameClass.local_pos;
+                refFrame.Transform = new Matrix4x4(rotation.GetMatrix()) * Matrix4x4.FromTranslation(position) * Matrix4x4.FromScaling(scale);
+
+                return refFrame;
+            }
+        }
+
+        private static void BuildSceneObjects(Scene scene, RDBMesh_t rdbMesh)
+        {
+            Dictionary<int, Node> sceneObjects = new Dictionary<int, Node>();
+
+            foreach(object member in rdbMesh.Members)
+            {
+                switch(member)
+                {
+                    case RDBMesh_t.RTriMesh_t triMeshClass:
+                        BuildTriMesh(scene, rdbMesh, triMeshClass);
+                        break;
+                }
+            }
+        }
+
+        private static void BuildTriMesh(Scene scene, RDBMesh_t rdbMesh, RDBMesh_t.RTriMesh_t triMeshClass)
+        {
+            Node node = new Node("TriMesh");
+
+            AVector3 scale = new Vector3(triMeshClass.scale, triMeshClass.scale, triMeshClass.scale);
+            AQuaternion rotation = triMeshClass.local_rot;
+            AVector3 position = triMeshClass.local_pos;
+            node.Transform = new Matrix4x4(rotation.GetMatrix()) * Matrix4x4.FromTranslation(position) * Matrix4x4.FromScaling(scale);
+
+            scene.RootNode.Children.Add(node);
+            RDBMesh_t.FAFTriMeshData_t triMeshDataClass = rdbMesh.Members[triMeshClass.data] as RDBMesh_t.FAFTriMeshData_t;
+            BuildMeshes(scene, rdbMesh, node, triMeshDataClass);
+        }
+
+        private static void BuildMeshes(Scene scene, RDBMesh_t rdbMesh, Node node, RDBMesh_t.FAFTriMeshData_t triMeshClass)
+        {
+            foreach(int meshIdx in triMeshClass.mesh)
+            {
+                RDBMesh_t.SimpleMesh simpleMeshClass = rdbMesh.Members[meshIdx] as RDBMesh_t.SimpleMesh;
+                RDBMesh_t.TriList triListClass = rdbMesh.Members[simpleMeshClass.trilist] as RDBMesh_t.TriList;
+
+                Mesh mesh = new Mesh(simpleMeshClass.name);
+                mesh.Vertices.AddRange(simpleMeshClass.Vertices.Select(x => (AVector3)x.Position));
+                mesh.Normals.AddRange(simpleMeshClass.Vertices.Select(x => (AVector3)x.Normals));
+                mesh.TextureCoordinateChannels[0].AddRange(simpleMeshClass.Vertices.Select(x => new AVector3(x.UVs.X, -x.UVs.Y, 0)));
+                mesh.SetIndices(triListClass.Triangles, 3);
+
+                scene.Meshes.Add(mesh);
+                node.MeshIndices.Add(scene.Meshes.IndexOf(mesh));
+            }
+        }
+
+        #endregion Export
 
         public static RDBMesh_t LoadFromFBX(string fileName)
         {
@@ -40,7 +122,7 @@ namespace AODB.Common
                 anim = -1,
                 anim_matrix = Matrix.Empty,
                 conn = -1,
-                grp_mask = 4294967295,
+                grp_mask = -1,
                 local_pos = Vector3.Zero,
                 local_rot = Quaternion.Identity,
                 scale = 1
@@ -54,7 +136,7 @@ namespace AODB.Common
             }
 
             List<RDBMesh_t.RTriMesh_t> triMeshes = rdbMesh.GetMembers<RDBMesh_t.RTriMesh_t>();
-            refFrame.chld_cnt = (uint)triMeshes.Count;
+            refFrame.chld_cnt = triMeshes.Count;
             refFrame.chld = triMeshes.Select(x => rdbMesh.Members.IndexOf(x)).ToArray();
 
             return rdbMesh;
@@ -73,7 +155,7 @@ namespace AODB.Common
                 conn = -1,
                 delta_state = -1,
                 enable_light = false,
-                grp_mask = 4294967295,
+                grp_mask = -1,
                 is_cloned = false,
                 local_pos = Vector3.Zero,
                 local_rot = Quaternion.Identity,
@@ -171,7 +253,6 @@ namespace AODB.Common
             RDBMesh_t.RDeltaState deltaState = new RDBMesh_t.RDeltaState()
             {
                 version = 1,
-                Version = 1,
                 name = "noname",
                 rst_count = 1,
                 rst_type = new int[] { 29 },
@@ -179,7 +260,7 @@ namespace AODB.Common
                 tch_count = 1,
                 tch_type = new int[] { 0 },
                 tstv_count = 0,
-                tstm_count = 0,
+                tstm_count = new int[] { 0 },
             };
 
             rdbMesh.Members.Add(deltaState);
@@ -200,8 +281,8 @@ namespace AODB.Common
 
             rdbMesh.Members.Add(texCreator);
 
-            triMesh.data = new int[] { rdbMesh.Members.IndexOf(triMeshData) };
-            triMeshData.mesh = new int[] { rdbMesh.Members.IndexOf(simpleMesh) };
+            triMesh.data = rdbMesh.Members.IndexOf(triMeshData);
+            triMeshData.mesh = new int[] { rdbMesh.Members.IndexOf(simpleMesh) } ;
             triMeshData.bvol = rdbMesh.Members.IndexOf(bVolume);
             simpleMesh.trilist = rdbMesh.Members.IndexOf(triList);
             simpleMesh.material = rdbMesh.Members.IndexOf(material);

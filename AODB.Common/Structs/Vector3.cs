@@ -24,5 +24,8 @@
             Y = y;
             Z = z;
         }
+
+        public static implicit operator Vector3(Assimp.Vector3D v) => new Vector3(v.X, v.Y, v.Z);
+        public static implicit operator Assimp.Vector3D(Vector3 v) => new Assimp.Vector3D(v.X, v.Y, v.Z);
     }
 }

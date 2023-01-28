@@ -14,7 +14,7 @@ namespace AODB
     {
         private DbController _dbController;
 
-        public Dictionary<uint, Dictionary<uint, ulong>> RecordTypeToId => _dbController.GetRecords();
+        public Dictionary<uint, Dictionary<int, ulong>> RecordTypeToId => _dbController.GetRecords();
 
         private bool disposedValue;
 
@@ -23,7 +23,7 @@ namespace AODB
             _dbController = new DbController(Path.Combine(path, "cd_image/data/db/ResourceDatabase.idx"));
         }
 
-        public RDBObject Get(uint type, uint instance)
+        public RDBObject Get(uint type, int instance)
         {
             var result = _dbController.Get(type, instance);
             if (result == null)
@@ -46,10 +46,20 @@ namespace AODB
             }
         }
 
-        public T Get<T>(uint instance) where T : RDBObject, new()
+        public T Get<T>(int instance) where T : RDBObject, new()
         {
             var type = typeof(T).GetCustomAttribute<RDBRecordAttribute>().RecordTypeID;
             return (T)Get(type, instance);
+        }
+
+        public byte[] GetRaw(uint type, int instance)
+        {
+            var result = _dbController.Get(type, instance);
+
+            if (result == null)
+                return null;
+
+            return result;
         }
 
         protected virtual void Dispose(bool disposing)

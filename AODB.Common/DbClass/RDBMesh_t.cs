@@ -1,4 +1,5 @@
 ﻿using AODB.Common.Structs;
+using System.IO;
 
 namespace AODB.Common.DbClasses
 {
@@ -7,42 +8,42 @@ namespace AODB.Common.DbClasses
         public class RRefFrame_t
         {
             public Matrix anim_matrix { get; set; }
-            public uint grp_mask { get; set; }
+            public int grp_mask { get; set; }
             public Vector3 local_pos { get; set; }
             public Quaternion local_rot { get; set; }
             public float scale { get; set; }
             public int anim { get; set; }
             public int conn { get; set; }
-            public uint chld_cnt { get; set; }
+            public int chld_cnt { get; set; }
             public int[] chld { get; set; }
         }
 
         public class RTriMesh_t
         {
             public Matrix anim_matrix { get; set; }
-            public uint grp_mask { get; set; }
+            public int grp_mask { get; set; }
             public Vector3 local_pos { get; set; }
             public Quaternion local_rot { get; set; }
             public float scale { get; set; }
             public int anim { get; set; }
             public int conn { get; set; }
             public int[] chld { get; set; }
-            public uint chld_cnt { get; set; }
-            public uint prio { get; set; }
+            public int chld_cnt { get; set; }
+            public int prio { get; set; }
             public bool enable_light { get; set; }
             public int delta_state { get; set; }
-            public int[] data { get; set; }
+            public int data { get; set; }
             public bool is_cloned { get; set; }
-            public uint prelight_list_size { get; set; }
+            public int prelight_list_size { get; set; }
         }
 
         public class FAFTriMeshData_t
         {
-            public uint version { get; set; }
+            public int version { get; set; }
             public string name { get; set; }
             public Vector3 anim_pos { get; set; }
             public Quaternion anim_rot { get; set; }
-            public uint num_meshes { get; set; }
+            public int num_meshes { get; set; }
             public bool isdegen { get; set; }
             public int[] mesh { get; set; }
             public int bvol { get; set; }
@@ -50,19 +51,112 @@ namespace AODB.Common.DbClasses
 
         public class SimpleMesh
         {
-            public uint version { get; set; }
+            public int version { get; set; }
             public string name { get; set; }
             public int material { get; set; }
             public int trilist { get; set; }
             [AODBSerializer.RealSize]
             public byte[] vb_desc { get; set; }
             public byte[] vertices { get; set; }
+
+            public VertexDescription VertexDescription
+            {
+                get { return GetVertexDescription(); }
+            }
+
+            public Vertex[] Vertices
+            {
+                get { return GetVertices(); }
+            }
+
+            private VertexDescription GetVertexDescription()
+            {
+                using (BinaryReader reader = new BinaryReader(new MemoryStream(vb_desc)))
+                {
+                    return new VertexDescription
+                    {
+                        Unk1 = reader.ReadInt32(),
+                        Unk2 = reader.ReadInt32(),
+                        Unk3 = reader.ReadInt32(),
+                        NumVertices = reader.ReadInt32(),
+                    };
+                }
+            }
+
+            private Vertex[] GetVertices()
+            {
+                VertexDescription vertDesc = VertexDescription;
+                Vertex[] verts = new Vertex[vertDesc.NumVertices];
+                using (BinaryReader reader = new BinaryReader(new MemoryStream(vertices)))
+                {
+                    reader.ReadSingle(); //VertexBufferLen
+
+                    for (int i = 0; i < vertDesc.NumVertices; i++)
+                    {
+                        if (vertDesc.Unk3 == 0x112)
+                        {
+                            verts[i] = new Vertex()
+                            {
+                                Position = new Vector3()
+                                {
+                                    X = reader.ReadSingle(),
+                                    Y = reader.ReadSingle(),
+                                    Z = reader.ReadSingle()
+                                },
+                                Normals = new Vector3()
+                                {
+                                    X = reader.ReadSingle(),
+                                    Y = reader.ReadSingle(),
+                                    Z = reader.ReadSingle()
+                                },
+                                UVs = new Vector2()
+                                {
+                                    X = reader.ReadSingle(),
+                                    Y = reader.ReadSingle()
+                                }
+                            };
+                        }
+                        else if (vertDesc.Unk3 == 0x152)
+                        {
+                            verts[i] = new Vertex()
+                            {
+                                Position = new Vector3()
+                                {
+                                    X = reader.ReadSingle(),
+                                    Y = reader.ReadSingle(),
+                                    Z = reader.ReadSingle()
+                                },
+                                Normals = new Vector3()
+                                {
+                                    X = reader.ReadSingle(),
+                                    Y = reader.ReadSingle(),
+                                    Z = reader.ReadSingle()
+                                },
+                                Color = new Color()
+                                {
+                                    R = reader.ReadByte(),
+                                    G = reader.ReadByte(),
+                                    B = reader.ReadByte(),
+                                    A = reader.ReadByte()
+                                },
+                                UVs = new Vector2()
+                                {
+                                    X = reader.ReadSingle(),
+                                    Y = reader.ReadSingle()
+                                }
+                            };
+                        }
+                    }
+                }
+
+                return verts;
+            }
         }
 
         public class FAFMaterial_t
         {
             public int delta_state { get; set; }
-            public uint version { get; set; }
+            public int version { get; set; }
             public string name { get; set; }
             public int env_texture { get; set; }
             public Color diff { get; set; }
@@ -77,14 +171,30 @@ namespace AODB.Common.DbClasses
         public class FAFPointLight_t
         {
             public Matrix anim_matrix { get; set; }
-            public int[] grp_mask { get; set; }
+            public int grp_mask { get; set; }
             public Vector3 local_pos { get; set; }
             public Quaternion local_rot { get; set; }
             public float scale { get; set; }
-            public int[] anim { get; set; }
-            public int[] conn { get; set; }
-            public int[] chld_cnt { get; set; }
-            public int[] version { get; set; }
+            public int anim { get; set; }
+            public int conn { get; set; }
+            public int chld_cnt { get; set; }
+            public int[] chld { get; set; }
+            public int version { get; set; }
+            public byte[] light_info { get; set; }
+        }
+
+        public class FAFSpotLight_t
+        {
+            public Matrix anim_matrix { get; set; }
+            public int grp_mask { get; set; }
+            public Vector3 local_pos { get; set; }
+            public Quaternion local_rot { get; set; }
+            public float scale { get; set; }
+            public int anim { get; set; }
+            public int conn { get; set; }
+            public int chld_cnt { get; set; }
+            public int[] chld { get; set; }
+            public int version { get; set; }
             public byte[] light_info { get; set; }
         }
 
@@ -93,7 +203,7 @@ namespace AODB.Common.DbClasses
             public int version { get; set; }
             public string name { get; set; }
             public int delta_state { get; set; }
-            public int[] env_texture { get; set; }
+            public int env_texture { get; set; }
             public Color diff { get; set; }
             public Color spec { get; set; }
             public Color ambi { get; set; }
@@ -105,9 +215,8 @@ namespace AODB.Common.DbClasses
 
         public class RDeltaState
         {
-            public uint version { get; set; }
+            public int version { get; set; }
             public string name { get; set; }
-            public uint Version { get; set; }
             public int rst_count { get; set; }
             public int[] rst_type { get; set; }
             public int[] rst_value { get; set; }
@@ -115,7 +224,7 @@ namespace AODB.Common.DbClasses
             public int tch_count { get; set; }
             public int[] tch_type { get; set; }
             public int[] tch_text { get; set; }
-            public int tstm_count { get; set; }
+            public int[] tstm_count { get; set; }
             public int[] tst_type { get; set; }
             public int[] tst_value { get; set; }
         }
@@ -136,11 +245,31 @@ namespace AODB.Common.DbClasses
         public class TriList
         {
             public byte[] triangles { get; set; }
+
+            public int[] Triangles
+            {
+                get { return GetTriangles(); }
+            }
+
+            private int[] GetTriangles()
+            {
+                using (BinaryReader reader = new BinaryReader(new MemoryStream(triangles)))
+                {
+                    var numTriangles = reader.ReadInt32() / 2;
+
+                    int[] triangles = new int[numTriangles];
+
+                    for (int i = 0; i < numTriangles; i++)
+                        triangles[i] = reader.ReadInt16();
+
+                    return triangles;
+                }
+            }
         }
 
         public class BVolume_t
         {
-            public uint version { get; set; }
+            public int version { get; set; }
             public Vector3 sph_pos { get; set; }
             public float sph_radius { get; set; }
             public Vector3 min_pos { get; set; }
@@ -150,13 +279,14 @@ namespace AODB.Common.DbClasses
         public class FAFCollisionSphere_c
         {
             public Matrix anim_matrix { get; set; }
-            public uint grp_mask { get; set; }
+            public int grp_mask { get; set; }
             public Vector3 local_pos { get; set; }
             public Quaternion local_rot { get; set; }
             public float scale { get; set; }
             public int anim { get; set; }
             public int conn { get; set; }
-            public uint chld_cnt { get; set; }
+            public int chld_cnt { get; set; }
+            public int[] chld { get; set; }
         }
 
         public class FAFCollisionBox_c
@@ -168,7 +298,8 @@ namespace AODB.Common.DbClasses
             public float scale { get; set; }
             public int anim { get; set; }
             public int conn { get; set; }
-            public uint chld_cnt { get; set; }
+            public int chld_cnt { get; set; }
+            public int[] chld { get; set; }
         }
 
         public class FAFAnim_t
@@ -194,10 +325,34 @@ namespace AODB.Common.DbClasses
 
         public class RRefFrameConnector
         {
-            public uint version { get; set; }
+            public int version { get; set; }
             public string name { get; set; }
             public int originator { get; set; }
 
+        }
+
+        public class RLight_t
+        {
+            public Matrix anim_matrix { get; set; }
+            public int grp_mask { get; set; }
+            public Vector3 local_pos { get; set; }
+            public Quaternion local_rot { get; set; }
+            public float scale { get; set; }
+            public int anim { get; set; }
+            public int conn { get; set; }
+            public uint chld_cnt { get; set; }
+            public int[] chld { get; set; }
+            public int version { get; set; }
+            public byte[] light_info { get; set; }
+        }
+
+
+        public class TextureFileCreator
+        {
+            public string texture_path { get; set; }
+            public string alpha_path { get; set; }
+            public uint pref_pix_format { get; set; }
+            public bool mipmap_enable { get; set; }
         }
 
         public class Submesh

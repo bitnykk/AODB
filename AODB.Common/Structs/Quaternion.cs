@@ -88,5 +88,6 @@ namespace AODB.Common.Structs
         }
 
         public static implicit operator Quaternion(Assimp.Quaternion q) => new Quaternion(q.X, q.Y, q.Z, q.W);
+        public static implicit operator Assimp.Quaternion(Quaternion q) => new Assimp.Quaternion(q.X, q.Y, q.Z, q.W);
     }
 }

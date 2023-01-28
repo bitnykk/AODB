@@ -13,7 +13,7 @@ namespace AODB.Common.DbClasses
 
         public DbClass()
         {
-            this.Members = new List<object>();
+            Members = new List<object>();
         }
 
         public string[] GetNames()
@@ -28,7 +28,21 @@ namespace AODB.Common.DbClasses
 
         public List<T> GetMembers<T>()
         {
-            return this.Members.OfType<T>().Cast<T>().ToList();
+            return Members.OfType<T>().Cast<T>().ToList();
         }
+
+        public T GetMember<T>()
+        {
+            T dbClass = Members.OfType<T>().Cast<T>().FirstOrDefault();
+
+            //if (dbClass == null)
+            //    throw new DbClassNotFound();
+
+            return dbClass;
+        }
+    }
+
+    public class DbClassNotFound : Exception
+    {
     }
 }
