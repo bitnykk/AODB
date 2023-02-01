@@ -9,6 +9,7 @@ namespace AODB.Common.Structs
         public float Z { get; set; }
         public float W { get; set; }
 
+
         public double Magnitude
         {
             get { return Math.Sqrt((X * X) + (Y * Y) + (Z * Z) + (W * W)); }
@@ -88,6 +89,6 @@ namespace AODB.Common.Structs
         }
 
         public static implicit operator Quaternion(Assimp.Quaternion q) => new Quaternion(q.X, q.Y, q.Z, q.W);
-        public static implicit operator Assimp.Quaternion(Quaternion q) => new Assimp.Quaternion(q.X, q.Y, q.Z, q.W);
+        public static implicit operator Assimp.Quaternion(Quaternion q) => new Assimp.Quaternion(q.W, q.X, q.Y, q.Z);
     }
 }

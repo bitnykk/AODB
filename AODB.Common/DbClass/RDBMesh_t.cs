@@ -5,7 +5,7 @@ namespace AODB.Common.DbClasses
 {
     public class RDBMesh_t : DbClass
     {
-        public class RRefFrame_t
+        public class Transform
         {
             public Matrix anim_matrix { get; set; }
             public int grp_mask { get; set; }
@@ -14,21 +14,16 @@ namespace AODB.Common.DbClasses
             public float scale { get; set; }
             public int anim { get; set; }
             public int conn { get; set; }
-            public int chld_cnt { get; set; }
+            public uint chld_cnt { get; set; }
             public int[] chld { get; set; }
         }
 
-        public class RTriMesh_t
+        public class RRefFrame_t : Transform
         {
-            public Matrix anim_matrix { get; set; }
-            public int grp_mask { get; set; }
-            public Vector3 local_pos { get; set; }
-            public Quaternion local_rot { get; set; }
-            public float scale { get; set; }
-            public int anim { get; set; }
-            public int conn { get; set; }
-            public int[] chld { get; set; }
-            public int chld_cnt { get; set; }
+        }
+
+        public class RTriMesh_t : Transform
+        {
             public int prio { get; set; }
             public bool enable_light { get; set; }
             public int delta_state { get; set; }
@@ -43,7 +38,7 @@ namespace AODB.Common.DbClasses
             public string name { get; set; }
             public Vector3 anim_pos { get; set; }
             public Quaternion anim_rot { get; set; }
-            public int num_meshes { get; set; }
+            public uint num_meshes { get; set; }
             public bool isdegen { get; set; }
             public int[] mesh { get; set; }
             public int bvol { get; set; }
@@ -168,32 +163,14 @@ namespace AODB.Common.DbClasses
             public float opac { get; set; }
         }
 
-        public class FAFPointLight_t
+        public class FAFPointLight_t : Transform
         {
-            public Matrix anim_matrix { get; set; }
-            public int grp_mask { get; set; }
-            public Vector3 local_pos { get; set; }
-            public Quaternion local_rot { get; set; }
-            public float scale { get; set; }
-            public int anim { get; set; }
-            public int conn { get; set; }
-            public int chld_cnt { get; set; }
-            public int[] chld { get; set; }
             public int version { get; set; }
             public byte[] light_info { get; set; }
         }
 
-        public class FAFSpotLight_t
+        public class FAFSpotLight_t : Transform
         {
-            public Matrix anim_matrix { get; set; }
-            public int grp_mask { get; set; }
-            public Vector3 local_pos { get; set; }
-            public Quaternion local_rot { get; set; }
-            public float scale { get; set; }
-            public int anim { get; set; }
-            public int conn { get; set; }
-            public int chld_cnt { get; set; }
-            public int[] chld { get; set; }
             public int version { get; set; }
             public byte[] light_info { get; set; }
         }
@@ -215,18 +192,18 @@ namespace AODB.Common.DbClasses
 
         public class RDeltaState
         {
-            public int version { get; set; }
+            public uint version { get; set; }
             public string name { get; set; }
-            public int rst_count { get; set; }
-            public int[] rst_type { get; set; }
-            public int[] rst_value { get; set; }
-            public int tstv_count { get; set; }
-            public int tch_count { get; set; }
-            public int[] tch_type { get; set; }
+            public uint rst_count { get; set; }
+            public uint[] rst_type { get; set; }
+            public uint[] rst_value { get; set; }
+            public uint tstv_count { get; set; }
+            public uint tch_count { get; set; }
+            public uint[] tch_type { get; set; }
             public int[] tch_text { get; set; }
-            public int[] tstm_count { get; set; }
-            public int[] tst_type { get; set; }
-            public int[] tst_value { get; set; }
+            public uint[] tstm_count { get; set; }
+            public uint[] tst_type { get; set; }
+            public uint[] tst_value { get; set; }
         }
 
         public class FAFTexture_t
@@ -276,30 +253,12 @@ namespace AODB.Common.DbClasses
             public Vector3 max_pos { get; set; }
         }
 
-        public class FAFCollisionSphere_c
+        public class FAFCollisionSphere_c : Transform
         {
-            public Matrix anim_matrix { get; set; }
-            public int grp_mask { get; set; }
-            public Vector3 local_pos { get; set; }
-            public Quaternion local_rot { get; set; }
-            public float scale { get; set; }
-            public int anim { get; set; }
-            public int conn { get; set; }
-            public int chld_cnt { get; set; }
-            public int[] chld { get; set; }
         }
 
-        public class FAFCollisionBox_c
+        public class FAFCollisionBox_c : Transform
         {
-            public Matrix anim_matrix { get; set; }
-            public uint grp_mask { get; set; }
-            public Vector3 local_pos { get; set; }
-            public Quaternion local_rot { get; set; }
-            public float scale { get; set; }
-            public int anim { get; set; }
-            public int conn { get; set; }
-            public int chld_cnt { get; set; }
-            public int[] chld { get; set; }
         }
 
         public class FAFAnim_t
@@ -316,6 +275,42 @@ namespace AODB.Common.DbClasses
             public byte[] vis_keys { get; set; }
             public int num_uv_keys { get; set; }
             public byte[] uv_keys { get; set; }
+
+            public UVKey[] UVKeys
+            {
+                get { return GetUVKeys(); }
+            }
+
+            private UVKey[] GetUVKeys()
+            {
+                using (BinaryReader reader = new BinaryReader(new MemoryStream(uv_keys)))
+                {
+                    var length = reader.ReadInt32();
+
+                    UVKey[] uvKeys = new UVKey[num_uv_keys];
+
+                    for (int i = 0; i < num_uv_keys; i++)
+                    {
+                        uvKeys[i] = new UVKey
+                        {
+                            Tiling = new Vector2(reader.ReadSingle(), reader.ReadSingle()),
+                            Offset = new Vector2(reader.ReadSingle(), reader.ReadSingle()),
+                            Time = reader.ReadSingle(),
+                            Unk2 = reader.ReadInt32()
+                        };
+                    }
+
+                    return uvKeys;
+                }
+            }
+
+            public struct UVKey
+            {
+                public Vector2 Tiling;
+                public Vector2 Offset;
+                public float Time;
+                public int Unk2;
+            }
         }
 
         public class FAFAttractor_t : RRefFrame_t
@@ -331,17 +326,8 @@ namespace AODB.Common.DbClasses
 
         }
 
-        public class RLight_t
+        public class RLight_t : Transform
         {
-            public Matrix anim_matrix { get; set; }
-            public int grp_mask { get; set; }
-            public Vector3 local_pos { get; set; }
-            public Quaternion local_rot { get; set; }
-            public float scale { get; set; }
-            public int anim { get; set; }
-            public int conn { get; set; }
-            public uint chld_cnt { get; set; }
-            public int[] chld { get; set; }
             public int version { get; set; }
             public byte[] light_info { get; set; }
         }
