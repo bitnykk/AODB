@@ -32,7 +32,7 @@ namespace AODB.Common.RDBObjects
                         var instanceID = reader.ReadInt32();
                         var nameLength = reader.ReadInt32();
                         var name = reader.ReadChars(nameLength);
-                        instances.Add(instanceID, new string(name));
+                        instances.Add(instanceID, new string(name).TrimEnd('\0'));
                     }
                     _types.Add((ResourceTypeId)typeID, instances);
                 }
