@@ -53,12 +53,13 @@ namespace AODBImporter
             try
             {
                 var RDBNames = db.Get<InfoObject>(1);
+                string blah = Path.GetFileName(opts.Path);
 
                 if (opts.Id > 0)
                 {
                     db.PutRaw((int)resourceType, opts.Id, 1, File.ReadAllBytes(opts.Path));
                 }
-                else if(RDBNames.Types[resourceType].TryGetKey(Path.GetFileName(opts.Path), out int recordId))
+                else if(RDBNames.Types[resourceType].TryGetKey(Path.GetFileName(opts.Path) + '\0', out int recordId))
                 {
                     db.PutRaw((int)resourceType, recordId, 1, File.ReadAllBytes(opts.Path));
                 }
