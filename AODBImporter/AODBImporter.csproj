@@ -4,18 +4,19 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{76051DE2-FEE4-4158-BE5F-800FC24626EA}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>AODB.Common</RootNamespace>
-    <AssemblyName>AODB.Common</AssemblyName>
+    <ProjectGuid>{BB6DE451-DE1B-4E11-9BCB-6501FDA079EA}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>AODBImporter</RootNamespace>
+    <AssemblyName>AODBImporter</AssemblyName>
     <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <PlatformTarget>x86</PlatformTarget>
     <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
@@ -26,6 +27,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
@@ -37,6 +39,9 @@
     <Reference Include="AssimpNet, Version=5.0.0.0, Culture=neutral, PublicKeyToken=0d51b391f59f42a6, processorArchitecture=MSIL">
       <HintPath>..\packages\AssimpNet.5.0.0-beta1\lib\net40\AssimpNet.dll</HintPath>
     </Reference>
+    <Reference Include="CommandLine, Version=2.9.1.0, Culture=neutral, PublicKeyToken=5a870481e358d379, processorArchitecture=MSIL">
+      <HintPath>..\packages\CommandLineParser.2.9.1\lib\net461\CommandLine.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -47,35 +52,20 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AbiffConverter.cs" />
-    <Compile Include="AbiffExporter.cs" />
-    <Compile Include="AODBSerializer.cs" />
-    <Compile Include="DbClass\DbClass.cs" />
-    <Compile Include="DbClass\RDBMesh_t.cs" />
-    <Compile Include="DbClass\RDBRecordAttribute.cs" />
-    <Compile Include="Extensions\BinaryReaderExtensions.cs" />
-    <Compile Include="Extensions\BinaryWriterExtensions.cs" />
+    <Compile Include="Extensions.cs" />
+    <Compile Include="NativeDbLite.cs" />
+    <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="RDBObjects\IconTexture_1010008.cs" />
-    <Compile Include="RDBObjects\WallTextures_1010009.cs" />
-    <Compile Include="RDBObjects\SkinTexture_1010011.cs" />
-    <Compile Include="RDBObjects\Image_1010008.cs" />
-    <Compile Include="RDBObjects\RDBMesh_1010026.cs" />
-    <Compile Include="RDBObjects\RDBObject.cs" />
-    <Compile Include="RDBObjects\AOTexture_1010004.cs" />
-    <Compile Include="RDBObjects\GroundTexture_1010006.cs" />
-    <Compile Include="RDBObjects\InfoObject_1000010.cs" />
-    <Compile Include="RDBObjects\RDBMesh_1010001.cs" />
-    <Compile Include="Structs\AOMaterial.cs" />
-    <Compile Include="Structs\Color.cs" />
-    <Compile Include="Structs\Matrix.cs" />
-    <Compile Include="Structs\Quaternion.cs" />
-    <Compile Include="Structs\Vector2.cs" />
-    <Compile Include="Structs\Vector3.cs" />
-    <Compile Include="Structs\Vertex.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="App.config" />
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\AODB.Common\AODB.Common.csproj">
+      <Project>{76051de2-fee4-4158-be5f-800fc24626ea}</Project>
+      <Name>AODB.Common</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\AssimpNet.5.0.0-beta1\build\AssimpNet.targets" Condition="Exists('..\packages\AssimpNet.5.0.0-beta1\build\AssimpNet.targets')" />

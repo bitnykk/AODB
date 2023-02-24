@@ -9,7 +9,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AODB.Common", "AODB.Common\AODB.Common.csproj", "{76051DE2-FEE4-4158-BE5F-800FC24626EA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AODBImporter", "AODBImporter\AODBImporter.csproj", "{BB6DE451-DE1B-4E11-9BCB-6501FDA079EA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AODBImporter", "AOModelImporter\AODBImporter.csproj", "{BB6DE451-DE1B-4E11-9BCB-6501FDA079EA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

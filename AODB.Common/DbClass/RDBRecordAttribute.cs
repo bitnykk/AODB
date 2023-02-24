@@ -6,7 +6,7 @@ namespace AODB.Common.DbClasses
     {
         public RDBRecordAttribute() { }
 
-        public uint RecordTypeID { get; set; }
+        public int RecordTypeID { get; set; }
         public string Comments { get; set; }
     }
 }

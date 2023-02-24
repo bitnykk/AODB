@@ -7,6 +7,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using AODB.Common.DbClasses;
+using AODB.Common.RDBObjects;
 
 namespace AODB
 {
@@ -14,7 +15,7 @@ namespace AODB
     {
         private DbController _dbController;
 
-        public Dictionary<uint, Dictionary<int, ulong>> RecordTypeToId => _dbController.GetRecords();
+        public Dictionary<int, Dictionary<int, ulong>> RecordTypeToId => _dbController.GetRecords();
 
         private bool disposedValue;
 
@@ -23,7 +24,7 @@ namespace AODB
             _dbController = new DbController(Path.Combine(path, "cd_image/data/db/ResourceDatabase.idx"));
         }
 
-        public RDBObject Get(uint type, int instance)
+        public RDBObject Get(int type, int instance)
         {
             var result = _dbController.Get(type, instance);
             if (result == null)
@@ -52,7 +53,30 @@ namespace AODB
             return (T)Get(type, instance);
         }
 
-        public byte[] GetRaw(uint type, int instance)
+        public T Get<T>(ResourceTypeId type, int instance) where T : RDBObject, new()
+        {
+            var result = _dbController.Get((int)type, instance);
+            if (result == null)
+                return null;
+            using (var reader = new BinaryReader(new MemoryStream(result), Encoding.GetEncoding(1252)))
+            {
+                var recordType = reader.ReadInt32();
+                var recordInst = reader.ReadInt32();
+                var version = reader.ReadInt32();
+
+                var dbObj = new T();
+
+                dbObj.RecordType = recordType;
+                dbObj.RecordId = recordInst;
+                dbObj.RecordVersion = version;
+
+                dbObj.Deserialize(reader);
+
+                return dbObj;
+            }
+        }
+
+        public byte[] GetRaw(int type, int instance)
         {
             var result = _dbController.Get(type, instance);
 
@@ -76,11 +100,5 @@ namespace AODB
             Dispose(disposing: true);
             GC.SuppressFinalize(this);
         }
-    }
-
-    public enum ResourceTypeId
-    {
-        RdbMesh = 1010001,
-        Texture = 1010004,
     }
 }

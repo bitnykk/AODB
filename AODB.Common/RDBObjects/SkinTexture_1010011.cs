@@ -2,8 +2,8 @@
 
 namespace AODB.Common.RDBObjects
 {
-    [RDBRecord(RecordTypeID = 1010004)]
-    public class AOTexture : Image
+    [RDBRecord(RecordTypeID = 1010011)]
+    public class SkinTexture : Image
     {
     }
 }

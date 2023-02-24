@@ -4,15 +4,14 @@ using System.IO;
 
 namespace AODB.Common.RDBObjects
 {
-    public class Image : RDBObject
+    [RDBRecord(RecordTypeID = 1010006)]
+    public class GroundTexture : Image
     {
-        public byte[] JpgData;
-
         public override void Deserialize(BinaryReader reader)
         {
-            JpgData = reader.ReadBytes((int)reader.BaseStream.Length);
+            reader.ReadBytes(24);
+            JpgData = reader.ReadBytes((int)reader.BaseStream.Length - 24);
         }
-
 
         public override byte[] Serialize()
         {

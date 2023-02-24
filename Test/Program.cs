@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using AODB;
 using AODB.Common;
 using AODB.Common.DbClasses;
-using AODB.RDBObjects;
+using AODB.Common.RDBObjects;
 using Assimp;
 using Assimp.Unmanaged;
 
@@ -16,7 +16,7 @@ namespace Test
     internal class Program
     {
         public static RdbController _rdbController;
-        public static Dictionary<int, Dictionary<int, string>> RDBNames;
+        public static Dictionary<ResourceTypeId, Dictionary<int, string>> RDBNames;
 
         static void Main(string[] args)
         {
@@ -34,9 +34,19 @@ namespace Test
             //byte[] rawMesh = rdbController.GetRaw(1010001, 7798);
             //File.WriteAllBytes("7798.abiff", rawMesh);
 
+            //AOTexture tex = _rdbController.Get<AOTexture>((ResourceTypeId)1010011, 8767);
+
+            foreach(var blah in _rdbController.RecordTypeToId)
+            {
+                if(blah.Value.TryGetValue(45597, out _))
+                {
+                    Console.WriteLine($"Found 39745 in {blah.Key}");
+                }
+            }
+
 
             //AbiffConverter.LoadFromFBX($"C:\\Users\\tagyo\\Documents\\AOModelImport\\untitled.fbx");
-            Console.WriteLine(ExportMesh(meshId) ? "Exported." : "Export Failed.");
+            //Console.WriteLine(ExportMesh(meshId) ? "Exported." : "Export Failed.");
 
             //List<string> vDesc = new List<string>();
 
@@ -74,6 +84,7 @@ namespace Test
 
             //AbiffExporter exporter = 
             //Scene exportScene = AbiffConverter.CreateScene(mesh.RDBMesh_t);
+            _rdbController.Dispose();
 
             Console.WriteLine("Done");
             Console.Read();
@@ -256,7 +267,7 @@ namespace Test
 
         public static void ExportTexture(string exportPath, int texId, out string texName)
         {
-            texName = RDBNames[(int)ResourceTypeId.Texture].TryGetValue(texId, out string rdbName) ? rdbName.Trim('\0') : $"UnnamedTex_{texId}";
+            texName = RDBNames[ResourceTypeId.Texture].TryGetValue(texId, out string rdbName) ? rdbName.Trim('\0') : $"UnnamedTex_{texId}";
             File.WriteAllBytes($"{Path.GetDirectoryName(exportPath)}\\{texName}", _rdbController.Get<AOTexture>(texId).JpgData);
         }
     }

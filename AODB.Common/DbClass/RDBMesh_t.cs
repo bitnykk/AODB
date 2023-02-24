@@ -267,13 +267,13 @@ namespace AODB.Common.DbClasses
             public string name { get; set; }
             public float tot_time { get; set; }
             public bool loop { get; set; }
-            public int num_rot_keys { get; set; }
+            public int? num_rot_keys { get; set; }
             public byte[] rot_keys { get; set; }
-            public int num_trans_keys { get; set; }
+            public int? num_trans_keys { get; set; }
             public byte[] trans_keys { get; set; }
-            public int num_vis_keys { get; set; }
+            public int? num_vis_keys { get; set; }
             public byte[] vis_keys { get; set; }
-            public int num_uv_keys { get; set; }
+            public int? num_uv_keys { get; set; }
             public byte[] uv_keys { get; set; }
 
             public UVKey[] UVKeys
@@ -283,11 +283,14 @@ namespace AODB.Common.DbClasses
 
             private UVKey[] GetUVKeys()
             {
+                if(num_uv_keys == null)
+                    return null;
+
                 using (BinaryReader reader = new BinaryReader(new MemoryStream(uv_keys)))
                 {
                     var length = reader.ReadInt32();
 
-                    UVKey[] uvKeys = new UVKey[num_uv_keys];
+                    UVKey[] uvKeys = new UVKey[num_uv_keys.Value];
 
                     for (int i = 0; i < num_uv_keys; i++)
                     {

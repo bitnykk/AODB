@@ -5,7 +5,7 @@ using System.Linq;
 using AODB.Common.Structs;
 using AODB.Common.DbClasses;
 
-namespace AODB.RDBObjects
+namespace AODB.Common.RDBObjects
 {
     [RDBRecord(RecordTypeID = 1010001)]
     public class RDBMesh : RDBObject

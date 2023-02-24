@@ -127,11 +127,11 @@ namespace AODB.Common
             {
                 memberValue = reader.ReadInt16();
             }
-            else if (propertyInfo.PropertyType == typeof(int))
+            else if (propertyInfo.PropertyType == typeof(int) || propertyInfo.PropertyType == typeof(int?))
             {
                 memberValue = reader.ReadInt32();
             }
-            else if (propertyInfo.PropertyType == typeof(uint))
+            else if (propertyInfo.PropertyType == typeof(uint) || propertyInfo.PropertyType == typeof(int?))
             {
                 memberValue = reader.ReadUInt32();
             }
@@ -336,14 +336,14 @@ namespace AODB.Common
                 writer.Write(sizeof(short));
                 writer.Write((short)property.GetValue(classInst));
             }
-            else if (property.PropertyType == typeof(int))
+            else if (property.PropertyType == typeof(int) || property.PropertyType == typeof(int?))
             {
                 writer.Write(AOType.Int32.Id);
                 writer.Write(AOType.Int32.Size);
                 writer.Write(sizeof(int));
                 writer.Write((int)property.GetValue(classInst));
             }
-            else if (property.PropertyType == typeof(uint))
+            else if (property.PropertyType == typeof(uint) || property.PropertyType == typeof(uint?))
             {
                 writer.Write(AOType.UInt32.Id);
                 writer.Write(AOType.UInt32.Size);

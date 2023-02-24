@@ -7,8 +7,19 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 
-namespace AODB
+namespace AODB.Common.RDBObjects
 {
+    public enum ResourceTypeId
+    {
+        InfoObject = 1000010,
+        RdbMesh = 1010001,
+        Texture = 1010004,
+        GroundTexture = 1010006,
+        Icon = 1010008,
+        WallTexture = 1010009,
+        SkinTexture = 1010011
+    }
+
     public abstract class RDBObject
     {
         public int RecordType { get; set; }
@@ -16,9 +27,9 @@ namespace AODB
         public int RecordId { get; set; }
         public int RecordVersion { get; set; }
 
-        private static Dictionary<uint, Type> _objectTypes = null;
+        private static Dictionary<int, Type> _objectTypes = null;
 
-        public static Dictionary<uint, Type> ObjectTypes
+        public static Dictionary<int, Type> ObjectTypes
         {
             get
             {
@@ -26,7 +37,7 @@ namespace AODB
                 {
                     var types = Assembly.GetExecutingAssembly().GetTypes().Where(t => t.GetCustomAttribute<RDBRecordAttribute>() != null);
 
-                    _objectTypes = new Dictionary<uint, Type>();
+                    _objectTypes = new Dictionary<int, Type>();
 
                     foreach (var type in types)
                     {
@@ -47,7 +58,7 @@ namespace AODB
             _serializer = new AODBSerializer();
         }
 
-        public static RDBObject GetRdbObjectForRecordType(uint recordTypeId)
+        public static RDBObject GetRdbObjectForRecordType(int recordTypeId)
         {
             if (ObjectTypes.TryGetValue(recordTypeId, out var rdbObjectType))
             {
