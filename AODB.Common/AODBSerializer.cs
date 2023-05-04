@@ -59,7 +59,7 @@ namespace AODB.Common
                 {
                     MemberDef memberDef = new MemberDef();
                     memberDef.NameIndex = reader.ReadByte();
-                    memberDef.Name = names[memberDef.NameIndex].ObjName;
+                    memberDef.Name = memberDef.NameIndex == 255 ? "Unknown" : names[memberDef.NameIndex].ObjName;
                     memberDef.ElementType = reader.ReadInt32();
                     memberDef.ElementSize = reader.ReadInt32();
                     memberDef.TotalSize = reader.ReadInt32();
@@ -296,7 +296,7 @@ namespace AODB.Common
                 writer.Write(0);
                 writer.Write(1);
 
-                PropertyInfo[] properties = classInst.GetType().GetProperties();
+                PropertyInfo[] properties = classInst.GetType().GetProperties().Where(x => !x.IsDefined(typeof(RDBDoNotSerializeAttribute))).ToArray();
                 writer.Write(properties.Count(x => x.GetValue(classInst) != null) + 1);
 
                 writer.Write((byte)Array.IndexOf(names, "__class_id__"));

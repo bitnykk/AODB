@@ -54,11 +54,13 @@ namespace AODB.Common.DbClasses
             public byte[] vb_desc { get; set; }
             public byte[] vertices { get; set; }
 
+            [RDBDoNotSerialize]
             public VertexDescription VertexDescription
             {
                 get { return GetVertexDescription(); }
             }
 
+            [RDBDoNotSerialize]
             public Vertex[] Vertices
             {
                 get { return GetVertices(); }
@@ -223,6 +225,7 @@ namespace AODB.Common.DbClasses
         {
             public byte[] triangles { get; set; }
 
+            [RDBDoNotSerialize]
             public int[] Triangles
             {
                 get { return GetTriangles(); }

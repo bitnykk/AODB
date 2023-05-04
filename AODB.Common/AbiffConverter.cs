@@ -9,6 +9,10 @@ using Quaternion = AODB.Common.Structs.Quaternion;
 using AVector3 = Assimp.Vector3D;
 using AQuaternion = Assimp.Quaternion;
 using static AODB.Common.DbClasses.RDBMesh_t.FAFAnim_t;
+using AODB.Common.RDBObjects;
+using AODB.Common.Extensions;
+using System.Runtime.InteropServices.WindowsRuntime;
+using System.Security.Cryptography;
 
 namespace AODB.Common
 {
@@ -20,22 +24,23 @@ namespace AODB.Common
             return exporter.CreateScene(out uvAnims);
         }
 
-        public static RDBMesh_t LoadFromFBX(string fileName)
+        public static RDBMesh_t LoadFromFBX(string fileName, InfoObject infoObject, out Dictionary<int, Material> mats)
         {
             AssimpContext importer = new AssimpContext();
 
             Scene scene = importer.ImportFile(fileName, PostProcessPreset.TargetRealTimeMaximumQuality);
 
-            RDBMesh_t rdbMesh = Create(scene);
+            RDBMesh_t rdbMesh = Create(scene, infoObject, out mats);
 
             importer.Dispose();
 
             return rdbMesh;
         }
 
-        private static RDBMesh_t Create(Scene scene)
+        private static RDBMesh_t Create(Scene scene, InfoObject infoObject, out Dictionary<int, Material> mats)
         {
             RDBMesh_t rdbMesh = new RDBMesh_t();
+            mats = new Dictionary<int, Material>();
 
             RDBMesh_t.RRefFrame_t refFrame = new RDBMesh_t.RRefFrame_t()
             {
@@ -52,7 +57,7 @@ namespace AODB.Common
 
             foreach (Mesh mesh in scene.Meshes)
             {
-                AddMesh(rdbMesh, mesh, scene.Materials);
+                AddMesh(rdbMesh, mesh, scene.Materials, infoObject, mats);
             }
 
             List<RDBMesh_t.RTriMesh_t> triMeshes = rdbMesh.GetMembers<RDBMesh_t.RTriMesh_t>();
@@ -62,7 +67,7 @@ namespace AODB.Common
             return rdbMesh;
         }
 
-        private static void AddMesh(RDBMesh_t rdbMesh, Mesh mesh, List<Material> materials)
+        private static void AddMesh(RDBMesh_t rdbMesh, Mesh mesh, List<Material> materials, InfoObject infoObject, Dictionary<int, Material> mats)
         {
             Console.WriteLine(mesh.Vertices.Count);
             Console.WriteLine(mesh.Faces.Count);
@@ -196,8 +201,10 @@ namespace AODB.Common
             RDBMesh_t.AnarchyTexCreator_t texCreator = new RDBMesh_t.AnarchyTexCreator_t()
             {
                 type = 1010004,
-                inst = (uint)Math.Floor(double.Parse(materials[mesh.MaterialIndex].Name))
+                inst = (uint)GetMatId(materials[mesh.MaterialIndex], infoObject)
             };
+
+            mats.Add((int)texCreator.inst, materials[mesh.MaterialIndex]);
 
             rdbMesh.Members.Add(texCreator);
 
@@ -272,6 +279,36 @@ namespace AODB.Common
                     return stream.ToArray();
                 }
             }
+        }
+
+        private static int GetMatId(Material material, InfoObject infoObject)
+        {
+            if (material.TextureDiffuse.FilePath == null)
+                return 0;
+
+            if (infoObject.Types[ResourceTypeId.Texture].TryGetKey(material.TextureDiffuse.FilePath, out int key))
+            {
+                Console.WriteLine($"Texture {material.TextureDiffuse.FilePath} found at key {key}");
+
+                return key;
+            }
+
+            var keys = infoObject.Types[ResourceTypeId.Texture].Keys.ToArray();
+
+            for (int i = 0; i < keys.Length - 1; i++)
+            {
+                int nextKey = keys[i] + 1;
+                if (nextKey != keys[i + 1])
+                {
+                    Console.WriteLine($"Adding new InfoObject key. Texture:{nextKey} = {material.TextureDiffuse.FilePath}");
+
+                    infoObject.Types[ResourceTypeId.Texture].Add(nextKey, material.TextureDiffuse.FilePath);
+
+                    return nextKey;
+                }
+            }
+
+            return 0;
         }
     }
 }
