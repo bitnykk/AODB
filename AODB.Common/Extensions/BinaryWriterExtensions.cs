@@ -11,6 +11,11 @@ namespace AODB.Common
 {
     public static class BinaryWriterExtensions
     {
+        public static void WriteFixedSizeString(this BinaryWriter writer, string value, int size)
+        {
+            writer.Write(Encoding.UTF8.GetBytes(value.PadRight(size, '\u0000')));
+        }
+
         public static void WriteNullTerminatedString(this BinaryWriter writer, string value)
         {
             writer.Write(Encoding.UTF8.GetBytes(value));
@@ -23,6 +28,12 @@ namespace AODB.Common
 
             writer.Write(strbytes.Length);
             writer.Write(strbytes);
+        }
+
+        public static void Write(this BinaryWriter writer, Vector2 value)
+        {
+            writer.Write(value.X);
+            writer.Write(value.Y);
         }
 
         public static void Write(this BinaryWriter writer, Vector3 value)

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using AODB.Common.Structs;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -52,6 +53,37 @@ namespace AODB.Common
             }
 
             return new string(bytes.ToArray());
+        }
+
+        public static Quaternion ReadQuaternion(this BinaryReader reader)
+        {
+            return new Quaternion
+            {
+                X = reader.ReadSingle(),
+                Y = reader.ReadSingle(),
+                Z = reader.ReadSingle(),
+                W = reader.ReadSingle()
+            };
+        }
+
+        public static Vector3 ReadVector3(this BinaryReader reader)
+        {
+            return new Vector3
+            {
+                X = reader.ReadSingle(),
+                Y = reader.ReadSingle(),
+                Z = reader.ReadSingle()
+            };
+        }
+
+        public static Color ReadRGBColor(this BinaryReader reader)
+        {
+            return new Color
+            {
+                R = reader.ReadSingle(),
+                G = reader.ReadSingle(),
+                B = reader.ReadSingle()
+            };
         }
 
         public static int[] ReadIdentity(this BinaryReader reader)

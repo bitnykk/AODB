@@ -302,6 +302,9 @@ namespace AODB.Common
                 {
                     Console.WriteLine($"Adding new InfoObject key. Texture:{nextKey} = {material.TextureDiffuse.FilePath}");
 
+                    if (infoObject.Types[ResourceTypeId.Texture].ContainsKey(nextKey))
+                        continue;
+
                     infoObject.Types[ResourceTypeId.Texture].Add(nextKey, material.TextureDiffuse.FilePath);
 
                     return nextKey;

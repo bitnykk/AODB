@@ -40,7 +40,7 @@ namespace AODB
                     {
                         if (!_dataReaders.ContainsKey(0))
                         {
-                            _dataReaders.Add(0, new BinaryReader(new FileStream(f, FileMode.Open)));
+                            _dataReaders.Add(0, new BinaryReader(new FileStream(f, FileMode.Open, FileAccess.Read)));
                         }
                     }
                     else
@@ -49,7 +49,7 @@ namespace AODB
                         var idx = int.Parse(idxStr);
                         if (!_dataReaders.ContainsKey(idx))
                         {
-                            _dataReaders.Add(idx, new BinaryReader(new FileStream(f, FileMode.Open)));
+                            _dataReaders.Add(idx, new BinaryReader(new FileStream(f, FileMode.Open, FileAccess.Read)));
                         }
                     }
                 }
@@ -60,7 +60,7 @@ namespace AODB
         {
             _records = new Dictionary<int, Dictionary<int, ulong>>();
 
-            using (var reader = new BinaryReader(new FileStream(_idxPath, FileMode.Open)))
+            using (var reader = new BinaryReader(new FileStream(_idxPath, FileMode.Open, FileAccess.Read)))
             {
                 _blockOffset = reader.ReadUInt32_At(12);
                 var dataStart = reader.ReadInt32_At(72);
