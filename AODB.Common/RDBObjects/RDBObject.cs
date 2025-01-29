@@ -12,6 +12,7 @@ namespace AODB.Common.RDBObjects
     public enum ResourceTypeId
     {
         InfoObject = 1000010,
+        RDBItem = 1000020,
         PlayfieldDynels = 1000026,
         SkillTrickle = 1000204,
         RdbMesh = 1010001,
@@ -21,7 +22,8 @@ namespace AODB.Common.RDBObjects
         GroundTexture = 1010006,
         Icon = 1010008,
         WallTexture = 1010009,
-        SkinTexture = 1010011
+        SkinTexture = 1010011,
+        MonsterData = 1040023
     }
 
     public abstract class RDBObject
