@@ -27,8 +27,10 @@ namespace AODB
         public RDBObject Get(int type, int instance)
         {
             var result = _dbController.Get(type, instance);
+
             if (result == null)
                 return null;
+
             using (var reader = new BinaryReader(new MemoryStream(result)))
             {
                 var recordType = reader.ReadInt32();
