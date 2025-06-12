@@ -100,7 +100,7 @@ namespace AODB.Common.DbClasses
                                     Y = reader.ReadSingle(),
                                     Z = reader.ReadSingle()
                                 },
-                                Normals = new Vector3()
+                                Normal = new Vector3()
                                 {
                                     X = reader.ReadSingle(),
                                     Y = reader.ReadSingle(),
@@ -123,7 +123,7 @@ namespace AODB.Common.DbClasses
                                     Y = reader.ReadSingle(),
                                     Z = reader.ReadSingle()
                                 },
-                                Normals = new Vector3()
+                                Normal = new Vector3()
                                 {
                                     X = reader.ReadSingle(),
                                     Y = reader.ReadSingle(),
@@ -310,12 +310,76 @@ namespace AODB.Common.DbClasses
                 }
             }
 
+            public RotKey[] RotKeys
+            {
+                get { return GetRotKeys(); }
+            }
+
+            private RotKey[] GetRotKeys()
+            {
+                using (BinaryReader reader = new BinaryReader(new MemoryStream(rot_keys)))
+                {
+                    var length = reader.ReadInt32();
+
+                    RotKey[] uvKeys = new RotKey[num_rot_keys.Value];
+
+                    for (int i = 0; i < num_rot_keys; i++)
+                    {
+                        uvKeys[i] = new RotKey
+                        {
+                            Rotation = new Quaternion(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle()),
+                            Time = reader.ReadSingle(),
+                        };
+                    }
+
+                    return uvKeys;
+                }
+            }
+
+            public TransKey[] TransKeys
+            {
+                get { return GetTranslationKeys(); }
+            }
+
+            private TransKey[] GetTranslationKeys()
+            {
+                using (BinaryReader reader = new BinaryReader(new MemoryStream(trans_keys)))
+                {
+                    var length = reader.ReadInt32();
+
+                    TransKey[] uvKeys = new TransKey[num_trans_keys.Value];
+
+                    for (int i = 0; i < num_trans_keys; i++)
+                    {
+                        uvKeys[i] = new TransKey
+                        {
+                            Translation = new Vector3(reader.ReadSingle(), reader.ReadSingle(), reader.ReadSingle()),
+                            Time = reader.ReadSingle(),
+                        };
+                    }
+
+                    return uvKeys;
+                }
+            }
+
             public struct UVKey
             {
                 public Vector2 Tiling;
                 public Vector2 Offset;
                 public float Time;
                 public int Unk2;
+            }
+
+            public struct RotKey
+            {
+                public Quaternion Rotation;
+                public float Time;
+            }
+
+            public struct TransKey
+            {
+                public Vector3 Translation;
+                public float Time;
             }
         }
 
