@@ -70,14 +70,14 @@ namespace AODB.Common.RDBObjects
                 if (material.Unknown2 == 2 || material.Unknown2 == 6 || material.Unknown2 == 10)
                     material.EnvTextureName = new string(reader.ReadChars(reader.ReadInt32()));
 
-                material.Color1 = reader.ReadRGBColor();
-                material.Color2 = reader.ReadRGBColor();
-                material.Color3 = reader.ReadRGBColor();
-                material.Color4 = reader.ReadRGBColor();
+                material.Diffuse = reader.ReadRGBColor();
+                material.Specular = reader.ReadRGBColor();
+                material.Ambient = reader.ReadRGBColor();
+                material.Emission = reader.ReadRGBColor();
 
-                material.Unknown3 = reader.ReadSingle();
+                material.Sheen = reader.ReadSingle();
                 material.Unknown4 = reader.ReadSingle();
-                material.Unknown5 = reader.ReadSingle();
+                material.SheenOpacity = reader.ReadSingle();
 
                 Materials.Add(material);
             }
@@ -254,14 +254,14 @@ namespace AODB.Common.RDBObjects
                         if (material.Unknown2 == 2 || material.Unknown2 == 6 || material.Unknown2 == 10)
                             writer.WritePrefixedUTF8String(material.EnvTextureName);
 
-                        writer.Write(material.Color1);
-                        writer.Write(material.Color2);
-                        writer.Write(material.Color3);
-                        writer.Write(material.Color4);
+                        writer.Write(material.Diffuse);
+                        writer.Write(material.Specular);
+                        writer.Write(material.Ambient);
+                        writer.Write(material.Emission);
 
-                        writer.Write(material.Unknown3);
+                        writer.Write(material.Sheen);
                         writer.Write(material.Unknown4);
-                        writer.Write(material.Unknown5);
+                        writer.Write(material.SheenOpacity);
                     }
 
                     writer.Write(UnknownFloats.Count);
@@ -369,13 +369,13 @@ namespace AODB.Common.RDBObjects
             public int Unknown2;
             public string TextureName;
             public string EnvTextureName;
-            public Color Color1;
-            public Color Color2;
-            public Color Color3;
-            public Color Color4;
-            public float Unknown3;
+            public Color Diffuse;
+            public Color Specular;
+            public Color Ambient;
+            public Color Emission;
+            public float Sheen;
             public float Unknown4;
-            public float Unknown5;
+            public float SheenOpacity;
         }
 
         public class Joint

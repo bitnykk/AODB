@@ -4,7 +4,7 @@
     {
         public Vector3 Position;
 
-        public Vector3 Normals;
+        public Vector3 Normal;
 
         public Color Color;
 

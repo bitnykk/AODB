@@ -104,7 +104,7 @@ namespace AODB.Common.RDBObjects
                                         Z = vertexReader.ReadSingle()
                                     };
 
-                                    vertices[j].Normals = new Vector3()
+                                    vertices[j].Normal = new Vector3()
                                     {
                                         X = vertexReader.ReadSingle(),
                                         Y = vertexReader.ReadSingle(),
@@ -137,7 +137,7 @@ namespace AODB.Common.RDBObjects
                                             Y = vertexReader.ReadSingle(),
                                             Z = vertexReader.ReadSingle()
                                         },
-                                        Normals = new Vector3()
+                                        Normal = new Vector3()
                                         {
                                             X = vertexReader.ReadSingle(),
                                             Y = vertexReader.ReadSingle(),

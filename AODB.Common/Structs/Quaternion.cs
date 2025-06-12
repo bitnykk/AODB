@@ -17,6 +17,10 @@ namespace AODB.Common.Structs
 
         public static Quaternion Identity => new Quaternion(0, 0, 0, 1f);
 
+        public override string ToString()
+        {
+            return $"X: {X} | Y: {Y} | Z: {Z} | W: {W}";
+        }
 
         public Quaternion(double x, double y, double z, double w)
         {
@@ -87,8 +91,5 @@ namespace AODB.Common.Structs
         {
             return new Quaternion(lhs.W * rhs.X + lhs.X * rhs.W + lhs.Y * rhs.Z - lhs.Z * rhs.Y, lhs.W * rhs.Y + lhs.Y * rhs.W + lhs.Z * rhs.X - lhs.X * rhs.Z, lhs.W * rhs.Z + lhs.Z * rhs.W + lhs.X * rhs.Y - lhs.Y * rhs.X, lhs.W * rhs.W - lhs.X * rhs.X - lhs.Y * rhs.Y - lhs.Z * rhs.Z);
         }
-
-        public static implicit operator Quaternion(Assimp.Quaternion q) => new Quaternion(q.X, q.Y, q.Z, q.W);
-        public static implicit operator Assimp.Quaternion(Quaternion q) => new Assimp.Quaternion(q.W, q.X, q.Y, q.Z);
     }
 }
