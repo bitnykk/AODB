@@ -20,7 +20,6 @@ namespace AODB.Common.RDBObjects
             int Unk2 = reader.ReadInt32();
 
             int numBones = reader.ReadInt32();
-
             Bones = new List<Bone>();
             for (int i = 0; i < numBones; i++)
             {
