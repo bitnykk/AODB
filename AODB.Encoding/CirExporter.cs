@@ -16,7 +16,7 @@ namespace AODB.Encoding
         public CATAnim CatAnim;
     }
 
-    internal class CirExport
+    internal class CirExporter
     {
         private RDBCatMesh _catMesh;
         private List<AnimData> _catAnim;
@@ -26,7 +26,7 @@ namespace AODB.Encoding
         private List<int> _textureIds = new List<int>();
         private Node[] _boneNodes;
 
-        public CirExport(RDBCatMesh rdbMesh, List<AnimData> noAnim = null)
+        public CirExporter(RDBCatMesh rdbMesh, List<AnimData> noAnim = null)
         {
             _catAnim = noAnim;
             _catMesh = rdbMesh;

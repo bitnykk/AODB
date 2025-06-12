@@ -11,11 +11,11 @@ using AODB.Common.RDBObjects;
 
 namespace AODB.Encoding
 {
-    public class AbiffConvert
+    public class AbiffImporter
     {
         public static Scene ToAssimpScene(RDBMesh_t rdbMesh, out Dictionary<int, UVKey[]> uvAnims, out Dictionary<string, List<VectorKey>> transKeys, out Dictionary<string, List<QuaternionKey>> rotKeys)
         {
-            AbiffExport exporter = new AbiffExport(rdbMesh);
+            AbiffExporter exporter = new AbiffExporter(rdbMesh);
             return exporter.CreateScene(out uvAnims, out transKeys, out rotKeys);
         }
 

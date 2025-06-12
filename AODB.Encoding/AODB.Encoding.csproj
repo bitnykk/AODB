@@ -48,13 +48,14 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AbiffConvert.cs" />
-    <Compile Include="AbiffExport.cs" />
-    <Compile Include="CirConvert.cs" />
-    <Compile Include="CirExport.cs" />
+    <Compile Include="AbiffImporter.cs" />
+    <Compile Include="AbiffExporter.cs" />
+    <Compile Include="CirImporter.cs" />
+    <Compile Include="CirExporter.cs" />
+    <Compile Include="RenderEnums.cs" />
     <Compile Include="MathExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="AODBExport.cs" />
+    <Compile Include="ModelExporter.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\AODB.Common\AODB.Common.csproj">

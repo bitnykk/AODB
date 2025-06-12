@@ -4,17 +4,17 @@ using AODB.Common.RDBObjects;
 
 namespace AODB.Encoding
 {
-    public class CirConvert
+    public class CirImporter
     {
         public static Scene ToAssimpScene(RDBCatMesh castMesh)
         {
-            CirExport exporter = new CirExport(castMesh, null);
+            CirExporter exporter = new CirExporter(castMesh, null);
             return exporter.CreateScene();
         }
 
         public static Scene ToAssimpScene(RDBCatMesh castMesh, List<AnimData> animData)
         {
-            CirExport exporter = new CirExport(castMesh, animData);
+            CirExporter exporter = new CirExporter(castMesh, animData);
             return exporter.CreateScene();
         }
     }

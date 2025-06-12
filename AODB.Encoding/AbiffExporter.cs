@@ -8,10 +8,11 @@ using AVector3 = Assimp.Vector3D;
 using AQuaternion = Assimp.Quaternion;
 using static AODB.Common.DbClasses.RDBMesh_t.FAFAnim_t;
 using static AODB.Common.DbClasses.RDBMesh_t;
+using System;
 
 namespace AODB.Encoding
 {
-    internal class AbiffExport
+    internal class AbiffExporter
     {
         private RDBMesh_t _rdbMesh;
         private Scene _scene = null;
@@ -21,7 +22,7 @@ namespace AODB.Encoding
         private Dictionary<string, List<QuaternionKey>> _rotKeys = new Dictionary<string, List<QuaternionKey>>();
         private Dictionary<string, List<VectorKey>> _transKeys = new Dictionary<string, List<VectorKey>>();
 
-        public AbiffExport(RDBMesh_t rdbMesh)
+        public AbiffExporter(RDBMesh_t rdbMesh)
         {
             _rdbMesh = rdbMesh;
         }
@@ -81,8 +82,8 @@ namespace AODB.Encoding
                 {
                     if (sceneObjects.TryGetValue(childIdx, out Node node))
                     {
-                        if (sceneObjects.TryGetValue(i, out var nod))
-                            nod.Children.Add(node);
+                        if (sceneObjects.TryGetValue(i, out var parent))
+                            parent.Children.Add(node);
                     }
                 }
             }
@@ -241,13 +242,16 @@ namespace AODB.Encoding
 
                 for (int i = 0; i < deltaStateClass.rst_count; i++)
                 {
-                    switch(deltaStateClass.rst_type[i])
+                    switch((D3DRenderStateType)deltaStateClass.rst_type[i])
                     {
-                        case 22: //TwoSided
+                        case D3DRenderStateType.D3DRS_CULLMODE: //TwoSided
                             mat.IsTwoSided = true;
                             break;
-                        case 27: //Apply Alpha
+                        case D3DRenderStateType.D3DRS_ALPHABLENDENABLE: //Apply Alpha
                             mat.AddProperty(new MaterialProperty("ApplyAlpha", deltaStateClass.rst_value[i] == 1));
+                            break;
+                        default:
+                            Console.WriteLine($"Unhandled render state: {(D3DRenderStateType)deltaStateClass.rst_type[i]}");
                             break;
                     }
                 }
@@ -258,10 +262,12 @@ namespace AODB.Encoding
 
                     if (_rdbMesh.Members[textureClass.creator] is AnarchyTexCreator_t texCreatorClass)
                     {
-                        if (deltaStateClass.tch_type[i] == 0)
+                        if ((TextureChannelType)deltaStateClass.tch_type[i] == TextureChannelType.Diffuse)
                             mat.AddProperty(new MaterialProperty("DiffuseId", (int)texCreatorClass.inst));
-                        else if (deltaStateClass.tch_type[i] == 1)
+                        else if ((TextureChannelType)deltaStateClass.tch_type[i] == TextureChannelType.Emissive)
                             mat.AddProperty(new MaterialProperty("EmissionId", (int)texCreatorClass.inst));
+                        else
+                            Console.WriteLine($"Unhandled texture channel: {deltaStateClass.tch_type[i]}");
                     }
                 }
             }

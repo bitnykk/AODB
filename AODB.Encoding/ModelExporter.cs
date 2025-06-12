@@ -7,7 +7,7 @@ using System.IO;
 
 namespace AODB.Encoding
 {
-    public class AODBExport
+    public class ModelExporter
     {
         public static string ExportTexture(RdbController rdbController, RdbTextureType rdbTextureType, int textureId, string path, out string textureName)
         {
@@ -57,7 +57,7 @@ namespace AODB.Encoding
                     throw new DirectoryNotFoundException();
 
                 var rdbMesh = rdbMeshType == RdbMeshType.RdbMesh ? rdbController.Get<RDBMesh>(meshId) : rdbController.Get<RDBMesh2>(meshId);
-                scene = AbiffConvert.ToAssimpScene(rdbMesh.RDBMesh_t, out var uvAnims, out var transKeys, out var rotKeys);
+                scene = AbiffImporter.ToAssimpScene(rdbMesh.RDBMesh_t, out var uvAnims, out var transKeys, out var rotKeys);
 
                 SetAndExportTextures(rdbController, scene, exportPath);
                 FixTransformsAbiff(scene);
@@ -116,7 +116,7 @@ namespace AODB.Encoding
                     throw new DirectoryNotFoundException();
 
                 var catMesh = rdbController.Get<RDBCatMesh>(meshId);
-                scene = CirConvert.ToAssimpScene(catMesh, new List<AnimData>
+                scene = CirImporter.ToAssimpScene(catMesh, new List<AnimData>
                 {
                     new AnimData
                     {
