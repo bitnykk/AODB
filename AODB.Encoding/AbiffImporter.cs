@@ -1,19 +1,22 @@
-﻿using Assimp;
+﻿using AODB.Common.DbClasses;
+using AODB.Common.RDBObjects;
+using AODB.Common.Structs;
+using Assimp;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.IO;
-using AODB.Common.DbClasses;
-using AODB.Common.Structs;
-using Quaternion = AODB.Common.Structs.Quaternion;
+using System.Linq;
+using static AODB.Common.DbClasses.RDBMesh_t;
 using static AODB.Common.DbClasses.RDBMesh_t.FAFAnim_t;
-using AODB.Common.RDBObjects;
+using AQuaternion = Assimp.Quaternion;
+using AVector3 = Assimp.Vector3D;
+using Quaternion = AODB.Common.Structs.Quaternion;
 
 namespace AODB.Encoding
 {
     public class AbiffImporter
     {
-        public static Scene ToAssimpScene(RDBMesh_t rdbMesh, out Dictionary<int, UVKey[]> uvAnims, out Dictionary<string, List<VectorKey>> transKeys, out Dictionary<string, List<QuaternionKey>> rotKeys)
+        public static Scene ToAssimpScene(RDBMesh_t rdbMesh, out Dictionary<int, UVKey[]> uvAnims, out Dictionary<int, List<VectorKey>> transKeys, out Dictionary<int, List<QuaternionKey>> rotKeys)
         {
             AbiffExporter exporter = new AbiffExporter(rdbMesh);
             return exporter.CreateScene(out uvAnims, out transKeys, out rotKeys);
@@ -37,180 +40,246 @@ namespace AODB.Encoding
             RDBMesh_t rdbMesh = new RDBMesh_t();
             mats = new Dictionary<int, Material>();
 
-            RDBMesh_t.RRefFrame_t refFrame = new RDBMesh_t.RRefFrame_t()
-            {
-                anim = -1,
-                anim_matrix = Matrix.Empty,
-                conn = -1,
-                grp_mask = -1,
-                local_pos = Vector3.Zero,
-                local_rot = Quaternion.Identity,
-                scale = 1
-            };
-
-            rdbMesh.Members.Add(refFrame);
-
-            foreach (Mesh mesh in scene.Meshes)
-            {
-                AddMesh(rdbMesh, mesh, scene.Materials, infoObject, mats);
-            }
-
-            List<RDBMesh_t.RTriMesh_t> triMeshes = rdbMesh.GetMembers<RDBMesh_t.RTriMesh_t>();
-            refFrame.chld_cnt = (uint)triMeshes.Count;
-            refFrame.chld = triMeshes.Select(x => rdbMesh.Members.IndexOf(x)).ToArray();
+            var root = ProcessNode(scene, scene.RootNode, rdbMesh, infoObject, mats);
 
             return rdbMesh;
         }
 
-        private static void AddMesh(RDBMesh_t rdbMesh, Mesh mesh, List<Material> materials, InfoObject infoObject, Dictionary<int, Material> mats)
+        private static Transform ProcessNode(Scene scene, Node node, RDBMesh_t rdbMesh, InfoObject infoObject, Dictionary<int, Material> mats)
         {
-            Console.WriteLine(mesh.Vertices.Count);
-            Console.WriteLine(mesh.Faces.Count);
+            Transform transform = null;
 
-            RDBMesh_t.RTriMesh_t triMesh = new RDBMesh_t.RTriMesh_t()
+            var childrenWithMeshes = node.Children.Where(x => x.HasMeshes).ToList();
+            if (childrenWithMeshes.Any())
             {
-                anim = -1,
-                anim_matrix = Matrix.Empty,
-                chld_cnt = 0,
-                conn = -1,
-                delta_state = -1,
-                enable_light = false,
-                grp_mask = -1,
-                is_cloned = false,
-                local_pos = Vector3.Zero,
-                local_rot = Quaternion.Identity,
-                //local_rot = Quaternion.FromAxisAngleRad(Vector3.right, (float)((Math.PI / 180) * -90)),
-                prelight_list_size = 0,
+                Dictionary<int, FAFMaterial_t> materialMap = new Dictionary<int, FAFMaterial_t>();
+                var triMesh = AddTriMesh(rdbMesh, scene, node, infoObject, mats);
+                var triMeshData = rdbMesh.Members[triMesh.data] as FAFTriMeshData_t;
+
+                foreach (Node childNode in childrenWithMeshes)
+                {
+                    foreach(var mesh in AddMesh(rdbMesh, scene, childNode, infoObject, materialMap, mats))
+                        triMeshData.AddMesh(rdbMesh.Members.IndexOf(mesh));
+                }
+
+                childrenWithMeshes[0].Transform.Decompose(out AVector3 scale, out AQuaternion rotation, out AVector3 translation);
+                triMeshData.anim_pos = translation.ToAODB();
+                triMeshData.anim_rot = rotation.ToAODB();
+
+                transform = triMesh;
+            }
+            else if (node.Name.StartsWith("Attractor") || node.Name.StartsWith("eff"))
+            {
+                transform = AddAttractor(rdbMesh, node);
+            }
+            else if (node != scene.RootNode && (!node.HasMeshes || node.HasChildren))
+            {
+                transform = AddEmptyTransform(rdbMesh, node);
+            }
+
+            foreach (Node childNode in node.Children)
+            {
+                Transform childTransform = ProcessNode(scene, childNode, rdbMesh, infoObject, mats);
+
+                if (childTransform != null)
+                    transform?.AddChild(rdbMesh.Members.IndexOf(childTransform));
+            }
+
+            if (transform != null)
+            {
+                if (transform is FAFAttractor_t)
+                {
+                    var matrix = node.Parent.Transform * node.Transform;
+                    matrix.Transpose();
+                    transform.anim_matrix = matrix.FromAssimpMatrix();
+                }
+                else
+                {
+                    var matrix = node.Transform;
+                    matrix.Transpose();
+                    transform.anim_matrix = matrix.FromAssimpMatrix();
+                }
+            }
+
+            return transform;
+        }
+
+        private static Transform AddEmptyTransform(RDBMesh_t rdbMesh, Node node)
+        {
+            RRefFrame_t refFrame = new RRefFrame_t();
+            rdbMesh.Members.Add(refFrame);
+
+            return refFrame;
+        }
+
+        private static Transform AddAttractor(RDBMesh_t rdbMesh, Node node)
+        {
+            RRefFrame_t refFrame = new RRefFrame_t();
+
+            rdbMesh.Members.Add(refFrame);
+
+            RRefFrameConnector refFrameConnector = new RRefFrameConnector
+            {
+                name = node.Name,
+                originator = rdbMesh.Members.IndexOf(refFrame)
+            };
+
+            rdbMesh.Members.Add(refFrameConnector);
+
+            refFrame.conn = rdbMesh.Members.IndexOf(refFrameConnector);
+
+            return refFrame;
+        }
+
+        private static FAFMaterial_t AddMaterial(RDBMesh_t rdbMesh, Material material, InfoObject infoObject, Dictionary<int, Material> mats)
+        {
+            AnarchyTexCreator_t texCreator = new AnarchyTexCreator_t()
+            {
+                type = (uint)ResourceTypeId.Texture,
+                inst = (uint)GetMatId(material, infoObject)
+            };
+            rdbMesh.Members.Add(texCreator);
+
+            FAFTexture_t texture = new FAFTexture_t()
+            {
+                name = "unnamed",
+                version = 1,
+                creator = rdbMesh.Members.IndexOf(texCreator)
+            };
+
+            rdbMesh.Members.Add(texture);
+
+            RDeltaState deltaState = new RDeltaState()
+            {
+                name = "noname",
+                tch_count = 1,
+                tch_type = new uint[] { (uint)TextureChannelType.Diffuse },
+                tch_text = new int[] { rdbMesh.Members.IndexOf(texture) }
+            };
+            deltaState.AddRenderStateType(D3DRenderStateType.D3DRS_SPECULARENABLE, 1);
+
+            rdbMesh.Members.Add(deltaState);
+
+            FAFMaterial_t aoMaterial = new FAFMaterial_t()
+            {
+                ambi = new Color()
+                {
+                    A = material.ColorAmbient.A,
+                    R = material.ColorAmbient.R,
+                    B = material.ColorAmbient.B,
+                    G = material.ColorAmbient.G
+                },
+                diff = new Color()
+                {
+                    A = material.ColorDiffuse.A,
+                    R = material.ColorDiffuse.R,
+                    B = material.ColorDiffuse.B,
+                    G = material.ColorDiffuse.G
+                },
+                emis = new Color()
+                {
+                    A = material.ColorEmissive.A,
+                    R = material.ColorEmissive.R,
+                    B = material.ColorEmissive.B,
+                    G = material.ColorEmissive.G
+                },
+                name = material.Name,
+                opac = material.Opacity,
+                shin = material.Shininess,
+                shin_str = 0,
+                spec = new Color()
+                {
+                    A = material.ColorSpecular.A,
+                    R = material.ColorSpecular.R,
+                    B = material.ColorSpecular.B,
+                    G = material.ColorSpecular.G
+                },
+                version = 1,
+                delta_state = rdbMesh.Members.IndexOf(deltaState)
+            };
+
+            rdbMesh.Members.Add(aoMaterial);
+
+            if (!mats.ContainsKey((int)texCreator.inst))
+                mats.Add((int)texCreator.inst, material);
+
+            return aoMaterial;
+        }
+
+        private static RTriMesh_t AddTriMesh(RDBMesh_t rdbMesh, Scene scene, Node node, InfoObject infoObject, Dictionary<int, Material> mats)
+        {
+            node.Transform.Decompose(out AVector3 scale, out AQuaternion rotation, out AVector3 translation);
+
+            RTriMesh_t triMesh = new RTriMesh_t()
+            {
                 prio = 3,
-                scale = 1f
+                local_pos = translation.ToAODB(),
+                local_rot = rotation.ToAODB(),
             };
 
             rdbMesh.Members.Add(triMesh);
 
-            RDBMesh_t.FAFTriMeshData_t triMeshData = new RDBMesh_t.FAFTriMeshData_t()
+            FAFTriMeshData_t triMeshData = new FAFTriMeshData_t()
             {
-                anim_pos = Vector3.Zero,
-                anim_rot = Quaternion.Identity,
-                bvol = -1,
-                isdegen = false,
-                name = "",
-                num_meshes = 1,
-                version = 1
+                name = node.Name,
             };
 
             rdbMesh.Members.Add(triMeshData);
 
-            RDBMesh_t.SimpleMesh simpleMesh = new RDBMesh_t.SimpleMesh()
-            {
-                material = -1,
-                name = "",
-                vb_desc = BuildVertexDescriptor(mesh.Vertices.Count),
-                version = 1,
-                vertices = BuildVertexArray(mesh)
-            };
 
-            rdbMesh.Members.Add(simpleMesh);
-
-            RDBMesh_t.TriList triList = new RDBMesh_t.TriList()
-            {
-                triangles = BuildTriangleArray(mesh)
-            };
-
-            rdbMesh.Members.Add(triList);
-
-            RDBMesh_t.BVolume_t bVolume = new RDBMesh_t.BVolume_t()
+            BVolume_t bVolume = new BVolume_t()
             {
                 max_pos = new Vector3(0.5f, 1.5f, 0.5f),
                 min_pos = new Vector3(-0.5f, -0.5f, -0.5f),
                 sph_pos = new Vector3(0, 0, 0),
                 sph_radius = 1,
-                version = 1
             };
 
             rdbMesh.Members.Add(bVolume);
 
-            RDBMesh_t.FAFMaterial_t material = new RDBMesh_t.FAFMaterial_t()
-            {
-                ambi = new Color()
-                {
-                    A = 0,
-                    R = 1,
-                    B = 1,
-                    G = 1
-                },
-                delta_state = -1,
-                diff = new Color()
-                {
-                    A = 0,
-                    R = 1,
-                    B = 1,
-                    G = 1
-                },
-                emis = new Color()
-                {
-                    A = 0,
-                    R = 1,
-                    B = 1,
-                    G = 1
-                },
-                env_texture = -1,
-                name = $"Material_{mesh.Name}",
-                opac = 1,
-                shin = 1,
-                shin_str = 0,
-                spec = new Color()
-                {
-                    A = 0,
-                    R = 0.9f,
-                    B = 0.9f,
-                    G = 0.9f
-                },
-                version = 1
-            };
-
-            rdbMesh.Members.Add(material);
-
-            RDBMesh_t.RDeltaState deltaState = new RDBMesh_t.RDeltaState()
-            {
-                version = 1,
-                name = "noname",
-                rst_count = 1,
-                rst_type = new uint[] { 29 },
-                rst_value = new uint[] { 1 },
-                tch_count = 1,
-                tch_type = new uint[] { 0 },
-                tstv_count = 0,
-                tstm_count = new uint[] { 0 },
-            };
-
-            rdbMesh.Members.Add(deltaState);
-
-            RDBMesh_t.FAFTexture_t texture = new RDBMesh_t.FAFTexture_t()
-            {
-                name = $"Texture_{mesh.Name}",
-                version = 1
-            };
-
-            rdbMesh.Members.Add(texture);
-
-            RDBMesh_t.AnarchyTexCreator_t texCreator = new RDBMesh_t.AnarchyTexCreator_t()
-            {
-                type = 1010004,
-                inst = (uint)GetMatId(materials[mesh.MaterialIndex], infoObject)
-            };
-
-            mats.Add((int)texCreator.inst, materials[mesh.MaterialIndex]);
-
-            rdbMesh.Members.Add(texCreator);
-
             triMesh.data = rdbMesh.Members.IndexOf(triMeshData);
-            triMeshData.mesh = new int[] { rdbMesh.Members.IndexOf(simpleMesh) } ;
             triMeshData.bvol = rdbMesh.Members.IndexOf(bVolume);
-            simpleMesh.trilist = rdbMesh.Members.IndexOf(triList);
-            simpleMesh.material = rdbMesh.Members.IndexOf(material);
-            material.delta_state = rdbMesh.Members.IndexOf(deltaState);
-            deltaState.tch_text = new int[] { rdbMesh.Members.IndexOf(texture) };
-            texture.creator = rdbMesh.Members.IndexOf(texCreator);
+
+            return triMesh;
+        }
+
+        private static List<SimpleMesh> AddMesh(RDBMesh_t rdbMesh, Scene scene, Node node, InfoObject infoObject, Dictionary<int, FAFMaterial_t> materialMap, Dictionary<int, Material> mats)
+        {
+            List<SimpleMesh> meshes = new List<SimpleMesh>();
+
+            int i = 0;
+            foreach (int meshIndex in node.MeshIndices)
+            {
+                Mesh mesh = scene.Meshes[meshIndex];
+
+                TriList triList = new TriList()
+                {
+                    triangles = BuildTriangleArray(mesh)
+                };
+
+                rdbMesh.Members.Add(triList);
+
+                if (!materialMap.TryGetValue(mesh.MaterialIndex, out FAFMaterial_t material) )
+                {
+                    material = AddMaterial(rdbMesh, scene.Materials[mesh.MaterialIndex], infoObject, mats);
+                    materialMap.Add(mesh.MaterialIndex, material);
+                }
+
+                SimpleMesh simpleMesh = new SimpleMesh()
+                {
+                    name = "",
+                    vb_desc = BuildVertexDescriptor(mesh.Vertices.Count),
+                    vertices = BuildVertexArray(mesh),
+                    material = rdbMesh.Members.IndexOf(material),
+                    trilist = rdbMesh.Members.IndexOf(triList)
+                };
+
+                rdbMesh.Members.Add(simpleMesh);
+
+                meshes.Add(simpleMesh);
+            }
+
+            return meshes;
         }
 
         private static byte[] BuildVertexDescriptor(int numVertices)

@@ -60,7 +60,6 @@ namespace AODB.Encoding
                 scene = AbiffImporter.ToAssimpScene(rdbMesh.RDBMesh_t, out var uvAnims, out var transKeys, out var rotKeys);
 
                 SetAndExportTextures(rdbController, scene, exportPath);
-                FixTransformsAbiff(scene);
                 new AssimpContext().ExportFile(scene, $"{exportPath}\\{GetInfoObjectName(rdbController, ResourceTypeId.RdbMesh, meshId).Replace(".abiff","")}.fbx", "fbx");
 
                 return string.Empty;

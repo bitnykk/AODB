@@ -1,14 +1,16 @@
-﻿using Assimp;
+﻿using AODB.Common.DbClasses;
+using AODB.Common.Structs;
+using Assimp;
+using Assimp.Unmanaged;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using AODB.Common.DbClasses;
-using AODB.Common.Structs;
-using Quaternion = AODB.Common.Structs.Quaternion;
-using AVector3 = Assimp.Vector3D;
-using AQuaternion = Assimp.Quaternion;
-using static AODB.Common.DbClasses.RDBMesh_t.FAFAnim_t;
+using System.Xml.Linq;
 using static AODB.Common.DbClasses.RDBMesh_t;
-using System;
+using static AODB.Common.DbClasses.RDBMesh_t.FAFAnim_t;
+using AQuaternion = Assimp.Quaternion;
+using AVector3 = Assimp.Vector3D;
+using Quaternion = AODB.Common.Structs.Quaternion;
 
 namespace AODB.Encoding
 {
@@ -19,18 +21,17 @@ namespace AODB.Encoding
 
         private Dictionary<FAFMaterial_t, int> _matMap = new Dictionary<FAFMaterial_t, int>();
         private Dictionary<int, UVKey[]> _uvKeys = new Dictionary<int, UVKey[]>();
-        private Dictionary<string, List<QuaternionKey>> _rotKeys = new Dictionary<string, List<QuaternionKey>>();
-        private Dictionary<string, List<VectorKey>> _transKeys = new Dictionary<string, List<VectorKey>>();
+        private Dictionary<int, List<QuaternionKey>> _rotKeys = new Dictionary<int, List<QuaternionKey>>();
+        private Dictionary<int, List<VectorKey>> _transKeys = new Dictionary<int, List<VectorKey>>();
 
         public AbiffExporter(RDBMesh_t rdbMesh)
         {
             _rdbMesh = rdbMesh;
         }
 
-        public Scene CreateScene(out Dictionary<int, UVKey[]> uvKeys, out Dictionary<string, List<VectorKey>> transKeys, out Dictionary<string, List<QuaternionKey>> rotKeys)
+        public Scene CreateScene(out Dictionary<int, UVKey[]> uvKeys, out Dictionary<int, List<VectorKey>> transKeys, out Dictionary<int, List<QuaternionKey>> rotKeys)
         {
             _scene = new Scene();
-            _scene.RootNode = new Node("Root");
             BuildSceneObjects();
 
             if(!_scene.HasMaterials)
@@ -51,7 +52,7 @@ namespace AODB.Encoding
         {
             Dictionary<int, Node> sceneObjects = new Dictionary<int, Node>();
 
-            for(int i = 0; i < _rdbMesh.Members.Count; i++)
+            for (int i = 0; i < _rdbMesh.Members.Count; i++)
             {
                 Node sceneObject;
 
@@ -67,10 +68,13 @@ namespace AODB.Encoding
                         continue;
                 }
 
+                if (_rdbMesh.Members[i] is Transform transform && transform.conn != -1)
+                    sceneObject.Name = ((RRefFrameConnector)_rdbMesh.Members[transform.conn]).name;
+
                 sceneObjects.Add(i, sceneObject);
             }
 
-            //Fix inheritance
+            // Fix inheritance
             List<Transform> transforms = _rdbMesh.GetMembers<Transform>();
 
             for (int i = 0; i < transforms.Count; i++)
@@ -83,12 +87,16 @@ namespace AODB.Encoding
                     if (sceneObjects.TryGetValue(childIdx, out Node node))
                     {
                         if (sceneObjects.TryGetValue(i, out var parent))
+                        {
+                            //node.Transform = parent.Transform * node.Transform;
                             parent.Children.Add(node);
+                        }
                     }
                 }
             }
-        }
 
+            _scene.RootNode = sceneObjects.Values.First();
+        }
 
         private Node BuildRefFrame(RRefFrame_t refFrameClass)
         {
@@ -97,18 +105,23 @@ namespace AODB.Encoding
             AVector3 scale = new AVector3(refFrameClass.scale, refFrameClass.scale, refFrameClass.scale);
             AQuaternion rotation = refFrameClass.local_rot.ToAssimp();
             AVector3 position = refFrameClass.local_pos.ToAssimp();
-            refFrame.Transform = new Matrix4x4(rotation.GetMatrix()) * Matrix4x4.FromTranslation(position) * Matrix4x4.FromScaling(scale);
+
+            if (refFrameClass.anim_matrix.values != null)
+            {
+                refFrame.Transform = refFrameClass.anim_matrix.Transpose().ToAssimpMatrix() * ((Transform)_rdbMesh.Members[0]).anim_matrix.Transpose().ToAssimpMatrix();
+            }
 
             return refFrame;
         }
 
         private Node BuildTriMesh(RTriMesh_t triMeshClass)
         {
-            Node node = new Node($"TriMesh_{_scene.RootNode.Children.Count()}");
-
-            _scene.RootNode.Children.Add(node);
             FAFTriMeshData_t triMeshDataClass = _rdbMesh.Members[triMeshClass.data] as FAFTriMeshData_t;
+
+            Node node = new Node(triMeshDataClass.name);
+
             var hasAnims = BuildFAFAnim(node, triMeshDataClass.anim_pos, triMeshDataClass.anim_rot, triMeshClass);
+
             BuildMeshes(node, triMeshClass, triMeshDataClass, hasAnims, out List<int> sceneMeshesIdx);
             BuildUVKeys(sceneMeshesIdx, triMeshClass);
 
@@ -116,8 +129,8 @@ namespace AODB.Encoding
             AQuaternion rotation = triMeshClass.local_rot.ToAssimp();
             AVector3 position = triMeshClass.local_pos.ToAssimp();
 
-            node.Transform = new Matrix4x4(rotation.GetMatrix()) * Matrix4x4.FromTranslation(position) * Matrix4x4.FromScaling(scale);
-
+            node.Transform = Matrix4x4.FromTranslation(position) * new Matrix4x4(rotation.GetMatrix()) * Matrix4x4.FromScaling(scale);
+            //node.Transform = triMeshClass.anim_matrix.Transpose().ToAssimpMatrix();
             return node;
         }
 
@@ -139,13 +152,13 @@ namespace AODB.Encoding
 
                 if (quartKeys.Count() != 0)
                 {
-                    _rotKeys.Add(node.Name, quartKeys.ToList());
+                    _rotKeys.Add(_scene.RootNode.Children.IndexOf(node), quartKeys.ToList());
                     nodeAnimationChannel.RotationKeys.AddRange(quartKeys);
                 }
 
                 if (vecKeys.Count() != 0)
                 {
-                    _transKeys.Add(node.Name, vecKeys.ToList());
+                    _transKeys.Add(_scene.RootNode.Children.IndexOf(node), vecKeys.ToList());
                     nodeAnimationChannel.PositionKeys.AddRange(vecKeys);
                 }
 
@@ -177,7 +190,7 @@ namespace AODB.Encoding
                 _uvKeys.Add(sceneMeshIdx, animClass.UVKeys);
         }
 
-        private void BuildMeshes(Node groupNode, RTriMesh_t triMeshClass, FAFTriMeshData_t triMeshDataClass, bool hasAnims, out List<int> sceneMeshesIdx)
+        private void BuildMeshes(Node node, RTriMesh_t triMeshClass, FAFTriMeshData_t triMeshDataClass, bool hasAnims, out List<int> sceneMeshesIdx)
         {
             sceneMeshesIdx = new List<int>();
 
@@ -186,10 +199,20 @@ namespace AODB.Encoding
                 SimpleMesh simpleMeshClass = _rdbMesh.Members[meshIdx] as SimpleMesh;
                 TriList triListClass = _rdbMesh.Members[simpleMeshClass.trilist] as TriList;
 
-                Node node = new Node($"{simpleMeshClass.name}_{meshIdx}");
                 Mesh mesh = new Mesh($"{simpleMeshClass.name}_{meshIdx}");
 
-                mesh.Vertices.AddRange(simpleMeshClass.Vertices.Select(x => x.Position.ToAssimp()));
+                //if (!hasAnims)
+                //{
+                AQuaternion rot = triMeshDataClass.anim_rot.ToAssimp();
+                AVector3 pos = triMeshDataClass.anim_pos.ToAssimp();
+
+                var rotationMatrix = new Matrix4x4(rot.GetMatrix());
+                var translationMatrix = Matrix4x4.FromTranslation(pos);
+
+                Matrix4x4 transformMatrix = rotationMatrix * translationMatrix;
+                //}
+
+                mesh.Vertices.AddRange(simpleMeshClass.Vertices.Select(x => transformMatrix * x.Position.ToAssimp()));
                 mesh.Normals.AddRange(simpleMeshClass.Vertices.Select(x => x.Normal.ToAssimp()));
                 mesh.TextureCoordinateChannels[0].AddRange(simpleMeshClass.Vertices.Select(x => new AVector3(x.UVs.X, 1f-x.UVs.Y, 0)));
                 mesh.UVComponentCount[0] = 2;
@@ -201,24 +224,12 @@ namespace AODB.Encoding
                     mesh.MaterialIndex = BuildMaterial(materialClass);
                 }
 
-                AQuaternion rot = new AQuaternion(0, 0, 0, 0);
-                AVector3 pos = new AVector3(0, 0, 0);
-
-                if (!hasAnims)
-                {
-                    rot = triMeshDataClass.anim_rot.ToAssimp();
-                    pos = triMeshDataClass.anim_pos.ToAssimp();
-                }
-
-                node.Transform = new Matrix4x4(rot.GetMatrix()) * Matrix4x4.FromTranslation(pos);
-
                 _scene.Meshes.Add(mesh);
 
                 var sceneMeshIdx = _scene.Meshes.IndexOf(mesh);
 
                 sceneMeshesIdx.Add(sceneMeshIdx);
                 node.MeshIndices.Add(sceneMeshIdx);
-                groupNode.Children.Add(node);
             }
         }
 
@@ -250,8 +261,11 @@ namespace AODB.Encoding
                         case D3DRenderStateType.D3DRS_ALPHABLENDENABLE: //Apply Alpha
                             mat.AddProperty(new MaterialProperty("ApplyAlpha", deltaStateClass.rst_value[i] == 1));
                             break;
+                        case D3DRenderStateType.D3DRS_SPECULARENABLE:
+                            mat.ColorSpecular = new Color4D(); //Disable specular
+                            break;
                         default:
-                            Console.WriteLine($"Unhandled render state: {(D3DRenderStateType)deltaStateClass.rst_type[i]}");
+                            Console.WriteLine($"Unhandled render state - {(D3DRenderStateType)deltaStateClass.rst_type[i]}: {deltaStateClass.rst_value[i]}");
                             break;
                     }
                 }

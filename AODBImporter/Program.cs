@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 using AODB.Common;
 using AODB.Common.DbClasses;
 using AODB.Common.RDBObjects;
+using AODB.Common.Structs;
+using AODB.Encoding;
 using Assimp;
 using CommandLine;
 
@@ -83,7 +85,8 @@ namespace AODBImporter
             {
                 var infoObject = db.Get<InfoObject>(1);
 
-                RDBMesh_t mesh = AbiffConverter.LoadFromFBX(opts.Path, infoObject, out Dictionary<int, Material> mats);
+
+                RDBMesh_t mesh = AbiffImporter.LoadFromFBX(opts.Path, infoObject, out Dictionary<int, Material> mats);
 
                 if (opts.Id > 0)
                 {
@@ -103,7 +106,7 @@ namespace AODBImporter
                     return;
                 }
 
-                foreach(var texture in mats)
+                foreach (var texture in mats)
                     db.PutRaw((int)ResourceTypeId.Texture, texture.Key, 8008, File.ReadAllBytes(Path.Combine(Path.GetDirectoryName(opts.Path), texture.Value.TextureDiffuse.FilePath)));
 
                 db.PutRaw((int)ResourceTypeId.InfoObject, 1, 8008, infoObject.Serialize());
@@ -142,7 +145,7 @@ namespace AODBImporter
                 {
                     db.PutRaw((int)resourceType, opts.Id, 8008, File.ReadAllBytes(opts.Path));
                 }
-                else if(infoObject.Types[resourceType].TryGetKey(Path.GetFileName(opts.Path), out int recordId))
+                else if (infoObject.Types[resourceType].TryGetKey(Path.GetFileName(opts.Path), out int recordId))
                 {
                     db.PutRaw((int)resourceType, recordId, 8008, File.ReadAllBytes(opts.Path));
                 }
@@ -177,12 +180,10 @@ namespace AODBImporter
             var db = new NativeDbLite();
 
             db.LoadDatabase(Path.Combine(opts.AOPath, "cd_image/data/db/ResourceDatabase.idx"));
-
             try
             {
                 var infoObject = db.Get<InfoObject>(1);
-
-                foreach(string file in Directory.GetFiles(opts.Path)) 
+                foreach (string file in Directory.GetFiles(opts.Path))
                 {
                     if (infoObject.Types[resourceType].TryGetKey(Path.GetFileName(file), out int recordId))
                     {

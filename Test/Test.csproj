@@ -60,6 +60,14 @@
       <Project>{76051DE2-FEE4-4158-BE5F-800FC24626EA}</Project>
       <Name>AODB.Common</Name>
     </ProjectReference>
+    <ProjectReference Include="..\AODB.Encoding\AODB.Encoding.csproj">
+      <Project>{F952ABCF-9DDA-8314-7318-7AB9EE1DC134}</Project>
+      <Name>AODB.Encoding</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\AODBImporter\AODBImporter.csproj">
+      <Project>{bb6de451-de1b-4e11-9bcb-6501fda079ea}</Project>
+      <Name>AODBImporter</Name>
+    </ProjectReference>
     <ProjectReference Include="..\AODB\AODB.csproj">
       <Project>{d1c4b7ff-67ac-44c5-8a48-23b4417cf068}</Project>
       <Name>AODB</Name>
