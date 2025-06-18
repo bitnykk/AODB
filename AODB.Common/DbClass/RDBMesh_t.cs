@@ -1,4 +1,5 @@
-﻿using AODB.Common.Structs;
+﻿using AODB.Common.RDBObjects;
+using AODB.Common.Structs;
 using System.IO;
 
 namespace AODB.Common.DbClasses
@@ -7,15 +8,15 @@ namespace AODB.Common.DbClasses
     {
         public class Transform
         {
-            public Matrix anim_matrix { get; set; }
-            public int grp_mask { get; set; }
+            public Matrix anim_matrix { get; set; } = Matrix.Empty;
+            public int grp_mask { get; set; } = -1;
             public Vector3 local_pos { get; set; }
             public Quaternion local_rot { get; set; }
-            public float scale { get; set; }
-            public int anim { get; set; }
-            public int conn { get; set; }
-            public uint chld_cnt { get; set; }
-            public int[] chld { get; set; }
+            public float scale { get; set; } = 1f;
+            public int anim { get; set; } = -1;
+            public int conn { get; set; } = -1;
+            public uint chld_cnt { get; set; } = 0;
+            public int[] chld { get; set; } = new int[0];
         }
 
         public class RRefFrame_t : Transform
@@ -25,31 +26,31 @@ namespace AODB.Common.DbClasses
         public class RTriMesh_t : Transform
         {
             public int prio { get; set; }
-            public bool enable_light { get; set; }
-            public int delta_state { get; set; }
-            public int data { get; set; }
-            public bool is_cloned { get; set; }
-            public int prelight_list_size { get; set; }
+            public bool enable_light { get; set; } = true;
+            public int delta_state { get; set; } = -1;
+            public int data { get; set; } = -1;
+            public bool is_cloned { get; set; } = false;
+            public int prelight_list_size { get; set; } = 0;
         }
 
         public class FAFTriMeshData_t
         {
-            public int version { get; set; }
+            public int version { get; set; } = 1;
             public string name { get; set; }
             public Vector3 anim_pos { get; set; }
             public Quaternion anim_rot { get; set; }
-            public uint num_meshes { get; set; }
-            public bool isdegen { get; set; }
-            public int[] mesh { get; set; }
-            public int bvol { get; set; }
+            public uint num_meshes { get; set; } = 0;
+            public bool isdegen { get; set; } = false;
+            public int[] mesh { get; set; } = new int[0];
+            public int bvol { get; set; } = -1;
         }
 
         public class SimpleMesh
         {
-            public int version { get; set; }
+            public int version { get; set; } = 1;
             public string name { get; set; }
-            public int material { get; set; }
-            public int trilist { get; set; }
+            public int material { get; set; } = -1;
+            public int trilist { get; set; } = -1;
             [AODBSerializer.RealSize]
             public byte[] vb_desc { get; set; }
             public byte[] vertices { get; set; }
@@ -152,17 +153,44 @@ namespace AODB.Common.DbClasses
 
         public class FAFMaterial_t
         {
-            public int delta_state { get; set; }
-            public int version { get; set; }
+            public int delta_state { get; set; } = -1;
+            public int version { get; set; } = 1;
             public string name { get; set; }
-            public int env_texture { get; set; }
-            public Color diff { get; set; }
-            public Color spec { get; set; }
-            public Color ambi { get; set; }
-            public Color emis { get; set; }
-            public float shin { get; set; }
-            public float shin_str { get; set; }
-            public float opac { get; set; }
+            public int env_texture { get; set; } = -1;
+            public Color diff { get; set; } = new Color()
+            {
+                A = 0,
+                R = 1,
+                G = 1,
+                B = 1
+            };
+
+            public Color spec { get; set; } = new Color()
+            {
+                A = 0,
+                R = 1f,
+                G = 1f,
+                B = 1f
+            };
+
+            public Color ambi { get; set; } = new Color()
+            {
+                A = 1,
+                R = 1f,
+                G = 1f,
+                B = 1f
+            };
+
+            public Color emis { get; set; } = new Color() {
+                A = 0, 
+                R = 1f, 
+                G = 1f, 
+                B = 1f 
+            };
+
+            public float shin { get; set; } = 1f;
+            public float shin_str { get; set; } = 1f;
+            public float opac { get; set; } = 1f;
         }
 
         public class FAFPointLight_t : Transform
@@ -181,43 +209,71 @@ namespace AODB.Common.DbClasses
         {
             public int version { get; set; }
             public string name { get; set; }
-            public int delta_state { get; set; }
-            public int env_texture { get; set; }
-            public Color diff { get; set; }
-            public Color spec { get; set; }
-            public Color ambi { get; set; }
-            public Color emis { get; set; }
-            public float shin { get; set; }
-            public float shin_str { get; set; }
-            public float opac { get; set; }
+            public int delta_state { get; set; } = -1;
+            public int env_texture { get; set; } = -1;
+            public Color diff { get; set; } = new Color()
+            {
+                A = 0,
+                R = 1,
+                G = 1,
+                B = 1
+            };
+
+            public Color spec { get; set; } = new Color()
+            {
+                A = 0,
+                R = 1f,
+                G = 1f,
+                B = 1f
+            };
+
+            public Color ambi { get; set; } = new Color()
+            {
+                A = 1,
+                R = 1f,
+                G = 1f,
+                B = 1f
+            };
+
+            public Color emis { get; set; } = new Color()
+            {
+                A = 0,
+                R = 1f,
+                G = 1f,
+                B = 1f
+            };
+
+            public float shin { get; set; } = 1f;
+            public float shin_str { get; set; } = 1f;
+            public float opac { get; set; } = 1f;
         }
 
         public class RDeltaState
         {
-            public uint version { get; set; }
+            public uint version { get; set; } = 1;
             public string name { get; set; }
-            public uint rst_count { get; set; }
-            public uint[] rst_type { get; set; }
-            public uint[] rst_value { get; set; }
-            public uint tstv_count { get; set; }
-            public uint tch_count { get; set; }
-            public uint[] tch_type { get; set; }
-            public int[] tch_text { get; set; }
-            public uint[] tstm_count { get; set; }
-            public uint[] tst_type { get; set; }
-            public uint[] tst_value { get; set; }
+            public uint rst_count { get; set; } = 0;
+            public uint[] rst_type { get; set; } = new uint[0];
+            public uint[] rst_value { get; set; } = new uint[0];
+            public uint tstv_count { get; set; } = 0;
+            public uint tch_count { get; set; } = 0;
+            public uint[] tch_type { get; set; } = new uint[0];
+            public int[] tch_text { get; set; } = new int[0];
+            public uint[] tstm_count { get; set; } = new uint[0];
+            public uint[] tst_type { get; set; } = new uint[0];
+            public uint[] tst_value { get; set; } = new uint[0];
         }
 
         public class FAFTexture_t
         {
-            public uint version { get; set; }
+            public uint version { get; set; } = 1;
             public string name { get; set; }
-            public int creator { get; set; }
+            public int creator { get; set; } = -1;
         }
 
         public class AnarchyTexCreator_t
         {
-            public uint type { get; set; }
+            public uint type { get; set; } = (uint)ResourceTypeId.Texture;
             public uint inst { get; set; }
         }
 
@@ -249,7 +305,7 @@ namespace AODB.Common.DbClasses
 
         public class BVolume_t
         {
-            public int version { get; set; }
+            public int version { get; set; } = 1;
             public Vector3 sph_pos { get; set; }
             public float sph_radius { get; set; }
             public Vector3 min_pos { get; set; }
@@ -266,7 +322,7 @@ namespace AODB.Common.DbClasses
 
         public class FAFAnim_t
         {
-            public int version { get; set; }
+            public int version { get; set; } = 1;
             public string name { get; set; }
             public float tot_time { get; set; }
             public bool loop { get; set; }
@@ -279,6 +335,7 @@ namespace AODB.Common.DbClasses
             public int? num_uv_keys { get; set; }
             public byte[] uv_keys { get; set; }
 
+            [RDBDoNotSerialize]
             public UVKey[] UVKeys
             {
                 get { return GetUVKeys(); }
@@ -310,6 +367,7 @@ namespace AODB.Common.DbClasses
                 }
             }
 
+            [RDBDoNotSerialize]
             public RotKey[] RotKeys
             {
                 get { return GetRotKeys(); }
@@ -336,6 +394,7 @@ namespace AODB.Common.DbClasses
                 }
             }
 
+            [RDBDoNotSerialize]
             public TransKey[] TransKeys
             {
                 get { return GetTranslationKeys(); }
@@ -390,9 +449,9 @@ namespace AODB.Common.DbClasses
 
         public class RRefFrameConnector
         {
-            public int version { get; set; }
+            public int version { get; set; } = 1;
             public string name { get; set; }
-            public int originator { get; set; }
+            public int originator { get; set; } = -1;
 
         }
 
