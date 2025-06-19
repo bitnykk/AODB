@@ -57,7 +57,7 @@ namespace AODB.Encoding
                     throw new DirectoryNotFoundException();
 
                 var rdbMesh = rdbMeshType == RdbMeshType.RdbMesh ? rdbController.Get<RDBMesh>(meshId) : rdbController.Get<RDBMesh2>(meshId);
-                scene = AbiffImporter.ToAssimpScene(rdbMesh.RDBMesh_t, out var uvAnims, out var transKeys, out var rotKeys);
+                scene = AbiffImporter.ToAssimpScene(rdbMesh.RDBMesh_t, out var uvAnims);
 
                 SetAndExportTextures(rdbController, scene, exportPath);
                 new AssimpContext().ExportFile(scene, $"{exportPath}\\{GetInfoObjectName(rdbController, ResourceTypeId.RdbMesh, meshId).Replace(".abiff","")}.fbx", "fbx");

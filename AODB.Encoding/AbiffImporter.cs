@@ -16,10 +16,10 @@ namespace AODB.Encoding
 {
     public class AbiffImporter
     {
-        public static Scene ToAssimpScene(RDBMesh_t rdbMesh, out Dictionary<int, UVKey[]> uvAnims, out Dictionary<int, List<VectorKey>> transKeys, out Dictionary<int, List<QuaternionKey>> rotKeys)
+        public static Scene ToAssimpScene(RDBMesh_t rdbMesh, out Dictionary<int, UVKey[]> uvAnims)
         {
             AbiffExporter exporter = new AbiffExporter(rdbMesh);
-            return exporter.CreateScene(out uvAnims, out transKeys, out rotKeys);
+            return exporter.CreateScene(out uvAnims);
         }
 
         public static RDBMesh_t LoadFromFBX(string fileName, InfoObject infoObject, out Dictionary<int, Material> mats)

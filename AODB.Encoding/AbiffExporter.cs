@@ -21,15 +21,12 @@ namespace AODB.Encoding
 
         private Dictionary<FAFMaterial_t, int> _matMap = new Dictionary<FAFMaterial_t, int>();
         private Dictionary<int, UVKey[]> _uvKeys = new Dictionary<int, UVKey[]>();
-        private Dictionary<int, List<QuaternionKey>> _rotKeys = new Dictionary<int, List<QuaternionKey>>();
-        private Dictionary<int, List<VectorKey>> _transKeys = new Dictionary<int, List<VectorKey>>();
-
         public AbiffExporter(RDBMesh_t rdbMesh)
         {
             _rdbMesh = rdbMesh;
         }
 
-        public Scene CreateScene(out Dictionary<int, UVKey[]> uvKeys, out Dictionary<int, List<VectorKey>> transKeys, out Dictionary<int, List<QuaternionKey>> rotKeys)
+        public Scene CreateScene(out Dictionary<int, UVKey[]> uvKeys)
         {
             _scene = new Scene();
             BuildSceneObjects();
@@ -42,8 +39,6 @@ namespace AODB.Encoding
             _scene.RootNode.Children.Add(oldRoot);
 
             uvKeys = _uvKeys;
-            rotKeys = _rotKeys;
-            transKeys = _transKeys;
 
             return _scene;
         }
@@ -152,13 +147,11 @@ namespace AODB.Encoding
 
                 if (quartKeys.Count() != 0)
                 {
-                    _rotKeys.Add(_scene.RootNode.Children.IndexOf(node), quartKeys.ToList());
                     nodeAnimationChannel.RotationKeys.AddRange(quartKeys);
                 }
 
                 if (vecKeys.Count() != 0)
                 {
-                    _transKeys.Add(_scene.RootNode.Children.IndexOf(node), vecKeys.ToList());
                     nodeAnimationChannel.PositionKeys.AddRange(vecKeys);
                 }
 
@@ -201,18 +194,23 @@ namespace AODB.Encoding
 
                 Mesh mesh = new Mesh($"{simpleMeshClass.name}_{meshIdx}");
 
-                //if (!hasAnims)
-                //{
-                AQuaternion rot = triMeshDataClass.anim_rot.ToAssimp();
-                AVector3 pos = triMeshDataClass.anim_pos.ToAssimp();
+                Matrix4x4 matrix;
+                if (!hasAnims)
+                {
+                    AQuaternion rot = triMeshDataClass.anim_rot.ToAssimp();
+                    AVector3 pos = triMeshDataClass.anim_pos.ToAssimp();
 
-                var rotationMatrix = new Matrix4x4(rot.GetMatrix());
-                var translationMatrix = Matrix4x4.FromTranslation(pos);
+                    var rotationMatrix = new Matrix4x4(rot.GetMatrix());
+                    var translationMatrix = Matrix4x4.FromTranslation(pos);
 
-                Matrix4x4 transformMatrix = rotationMatrix * translationMatrix;
-                //}
+                    matrix = rotationMatrix * translationMatrix;
+                }
+                else
+                {
+                    matrix = Matrix4x4.Identity;
+                }
 
-                mesh.Vertices.AddRange(simpleMeshClass.Vertices.Select(x => transformMatrix * x.Position.ToAssimp()));
+                mesh.Vertices.AddRange(simpleMeshClass.Vertices.Select(x => matrix * x.Position.ToAssimp()));
                 mesh.Normals.AddRange(simpleMeshClass.Vertices.Select(x => x.Normal.ToAssimp()));
                 mesh.TextureCoordinateChannels[0].AddRange(simpleMeshClass.Vertices.Select(x => new AVector3(x.UVs.X, 1f-x.UVs.Y, 0)));
                 mesh.UVComponentCount[0] = 2;
