@@ -158,6 +158,12 @@ namespace AODB.Encoding
             };
             deltaState.AddRenderStateType(D3DRenderStateType.D3DRS_SPECULARENABLE, 1);
 
+            if (material.IsTwoSided)
+                deltaState.AddRenderStateType(D3DRenderStateType.D3DRS_CULLMODE, (int)D3DCULL.D3DCULL_NONE);
+
+            if (material.Opacity < 1)
+                deltaState.AddRenderStateType(D3DRenderStateType.D3DRS_ALPHABLENDENABLE, 1);
+
             rdbMesh.Members.Add(deltaState);
 
             FAFMaterial_t aoMaterial = new FAFMaterial_t()
@@ -186,7 +192,7 @@ namespace AODB.Encoding
                 name = material.Name,
                 opac = material.Opacity,
                 shin = material.Shininess,
-                shin_str = 0,
+                shin_str = material.ShininessStrength,
                 spec = new Color()
                 {
                     A = material.ColorSpecular.A,
