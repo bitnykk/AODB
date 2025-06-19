@@ -287,6 +287,9 @@ namespace AODB.Encoding
             }
 
             int matIdx = _scene.MaterialCount;
+
+            _matMap.Add(materialClass, matIdx);
+
             _scene.Materials.Add(mat);
 
             return matIdx;
