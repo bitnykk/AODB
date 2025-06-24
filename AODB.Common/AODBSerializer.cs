@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reflection;
 using AODB.Common.DbClasses;
 using AODB.Common.Structs;
+using System.Security.Cryptography;
 
 namespace AODB.Common
 {
@@ -74,7 +75,8 @@ namespace AODB.Common
                         if (classInst == null)
                             break;
 
-                        Console.WriteLine($"Reading class {classDef.Name}");
+                        Console.WriteLine($"Reading class {classDef.Name} (Size: {classDef.ClassSize.ToString("X")})");
+
                         continue;
                     }
 
@@ -131,7 +133,7 @@ namespace AODB.Common
             {
                 memberValue = reader.ReadInt32();
             }
-            else if (propertyInfo.PropertyType == typeof(uint) || propertyInfo.PropertyType == typeof(int?))
+            else if (propertyInfo.PropertyType == typeof(uint) || propertyInfo.PropertyType == typeof(uint?))
             {
                 memberValue = reader.ReadUInt32();
             }
@@ -252,28 +254,17 @@ namespace AODB.Common
 
         private void Serialize(BinaryWriter writer, DbClass dbClassObj)
         {
-            
+
             string[] names = dbClassObj.GetNames().OrderBy(x => x).ToArray();
 
             writer.Write(names.Length);
 
-            foreach(string name in names)
+            foreach (string name in names)
             {
                 writer.WriteNullTerminatedString("0");
                 writer.WriteNullTerminatedString(name);
             }
 
-            /*
-            writer.Write(_names.Count);
-
-            foreach (var name in _names)
-            {
-                writer.WriteNullTerminatedString(name.Unk);
-                writer.WriteNullTerminatedString(name.ObjName);
-            }
-
-            string[] names = _names.Select(x => x.ObjName).ToArray();
-            */
             writer.Write(dbClassObj.Members.Count);
 
             //RootClass
@@ -323,7 +314,7 @@ namespace AODB.Common
                 writer.BaseStream.Position = classSizeIdx;
                 writer.Write((int)(classEndIdx - classSizeIdx - 4));
                 writer.BaseStream.Position = classEndIdx;
-                Console.WriteLine($"ClassSize: {((int)(classEndIdx - classSizeIdx - 4)).ToString("X4")}");
+                Console.WriteLine($"ClassSize: {((int)(classEndIdx - classSizeIdx - 4)).ToString("X")}");
             }
         }
 

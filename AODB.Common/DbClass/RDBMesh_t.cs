@@ -16,7 +16,7 @@ namespace AODB.Common.DbClasses
             public int anim { get; set; } = -1;
             public int conn { get; set; } = -1;
             public uint chld_cnt { get; set; } = 0;
-            public int[] chld { get; set; } = new int[0];
+            public int[] chld { get; set; } = null;
         }
 
         public class RRefFrame_t : Transform
@@ -41,7 +41,7 @@ namespace AODB.Common.DbClasses
             public Quaternion anim_rot { get; set; }
             public uint num_meshes { get; set; } = 0;
             public bool isdegen { get; set; } = false;
-            public int[] mesh { get; set; } = new int[0];
+            public int[] mesh { get; set; } = null;
             public int bvol { get; set; } = -1;
         }
 
@@ -253,15 +253,15 @@ namespace AODB.Common.DbClasses
             public uint version { get; set; } = 1;
             public string name { get; set; }
             public uint rst_count { get; set; } = 0;
-            public uint[] rst_type { get; set; } = new uint[0];
-            public uint[] rst_value { get; set; } = new uint[0];
+            public uint[] rst_type { get; set; } = null;
+            public uint[] rst_value { get; set; } = null;
             public uint tstv_count { get; set; } = 0;
             public uint tch_count { get; set; } = 0;
-            public uint[] tch_type { get; set; } = new uint[0];
-            public int[] tch_text { get; set; } = new int[0];
-            public uint[] tstm_count { get; set; } = new uint[0];
-            public uint[] tst_type { get; set; } = new uint[0];
-            public uint[] tst_value { get; set; } = new uint[0];
+            public uint[] tch_type { get; set; } = null;
+            public int[] tch_text { get; set; } = null;
+            public uint[] tstm_count { get; set; } = null;
+            public uint[] tst_type { get; set; } = null;
+            public uint[] tst_value { get; set; } = null;
         }
 
         public class FAFTexture_t
@@ -322,18 +322,18 @@ namespace AODB.Common.DbClasses
 
         public class FAFAnim_t
         {
-            public int version { get; set; } = 1;
+            public uint version { get; set; } = 1;
             public string name { get; set; }
             public float tot_time { get; set; }
             public bool loop { get; set; }
-            public int? num_rot_keys { get; set; }
-            public byte[] rot_keys { get; set; }
-            public int? num_trans_keys { get; set; }
-            public byte[] trans_keys { get; set; }
-            public int? num_vis_keys { get; set; }
-            public byte[] vis_keys { get; set; }
-            public int? num_uv_keys { get; set; }
-            public byte[] uv_keys { get; set; }
+            public uint? num_rot_keys { get; set; } = null;
+            public byte[] rot_keys { get; set; } = null;
+            public uint? num_trans_keys { get; set; } = null;
+            public byte[] trans_keys { get; set; } = null;
+            public uint? num_vis_keys { get; set; } = null;
+            public byte[] vis_keys { get; set; } = null;
+            public uint? num_uv_keys { get; set; } = null;
+            public byte[] uv_keys { get; set; } = null;
 
             [RDBDoNotSerialize]
             public UVKey[] UVKeys

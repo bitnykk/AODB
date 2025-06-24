@@ -21,6 +21,8 @@ namespace AODB.Encoding
 
         private Dictionary<FAFMaterial_t, int> _matMap = new Dictionary<FAFMaterial_t, int>();
         private Dictionary<int, UVKey[]> _uvKeys = new Dictionary<int, UVKey[]>();
+        private Dictionary<string, int> _nameCache = new Dictionary<string, int>();
+
         public AbiffExporter(RDBMesh_t rdbMesh)
         {
             _rdbMesh = rdbMesh;
@@ -41,6 +43,17 @@ namespace AODB.Encoding
             uvKeys = _uvKeys;
 
             return _scene;
+        }
+
+        private string GetUniqueNodeName(string name)
+        {
+            if (!_nameCache.ContainsKey(name))
+            {
+                _nameCache[name] = 1;
+                return name;
+            }
+
+            return $"{name}.{(_nameCache[name]++).ToString("D3")}";
         }
 
         private void BuildSceneObjects()
@@ -95,7 +108,7 @@ namespace AODB.Encoding
 
         private Node BuildRefFrame(RRefFrame_t refFrameClass)
         {
-            Node refFrame = new Node("RRefFrame");
+            Node refFrame = new Node(GetUniqueNodeName("RRefFrame"));
 
             AVector3 scale = new AVector3(refFrameClass.scale, refFrameClass.scale, refFrameClass.scale);
             AQuaternion rotation = refFrameClass.local_rot.ToAssimp();
@@ -103,6 +116,7 @@ namespace AODB.Encoding
 
             if (refFrameClass.anim_matrix.values != null)
             {
+                //This will definitely not work for all cases, but it should be fine for most of the meshes
                 refFrame.Transform = refFrameClass.anim_matrix.Transpose().ToAssimpMatrix() * ((Transform)_rdbMesh.Members[0]).anim_matrix.Transpose().ToAssimpMatrix();
             }
 
@@ -113,7 +127,7 @@ namespace AODB.Encoding
         {
             FAFTriMeshData_t triMeshDataClass = _rdbMesh.Members[triMeshClass.data] as FAFTriMeshData_t;
 
-            Node node = new Node(triMeshDataClass.name);
+            Node node = new Node(GetUniqueNodeName(triMeshDataClass.name));
 
             var hasAnims = BuildFAFAnim(node, triMeshDataClass.anim_pos, triMeshDataClass.anim_rot, triMeshClass);
 
@@ -125,13 +139,12 @@ namespace AODB.Encoding
             AVector3 position = triMeshClass.local_pos.ToAssimp();
 
             node.Transform = Matrix4x4.FromTranslation(position) * new Matrix4x4(rotation.GetMatrix()) * Matrix4x4.FromScaling(scale);
-            //node.Transform = triMeshClass.anim_matrix.Transpose().ToAssimpMatrix();
             return node;
         }
 
         private bool BuildFAFAnim(Node node, Vector3 animPos, Quaternion animRot, RTriMesh_t triMeshClass)
         {
-            if (triMeshClass.anim <= 0)
+            if (triMeshClass.anim == -1)
                 return false;
 
             FAFAnim_t animClass = _rdbMesh.Members[triMeshClass.anim] as FAFAnim_t;
@@ -142,8 +155,10 @@ namespace AODB.Encoding
                 var nodeAnimationChannel = new NodeAnimationChannel();
                 nodeAnimationChannel.NodeName = node.Name;
 
-                var quartKeys = animClass.RotKeys.Select(x => new QuaternionKey { Time = x.Time, Value = x.Rotation.ToAssimp() });
-                var vecKeys = animClass.TransKeys.Select(x => new VectorKey { Time = x.Time, Value = x.Translation.ToAssimp() });
+                var rotKeys = animClass.RotKeys.Select(x => (x.Rotation.ToAssimp()).GetEulerAnglesFromQuaternion()).ToList();
+
+                var quartKeys = animClass.RotKeys.Select(x => new QuaternionKey { Time = x.Time, Value = x.Rotation.ToAssimp() * triMeshClass.local_rot.ToAssimp()});
+                var vecKeys = animClass.TransKeys.Select(x => new VectorKey { Time = x.Time, Value = x.Translation.ToAssimp() + triMeshClass.local_pos.ToAssimp() });
 
                 if (quartKeys.Count() != 0)
                 {
@@ -194,7 +209,8 @@ namespace AODB.Encoding
 
                 Mesh mesh = new Mesh($"{simpleMeshClass.name}_{meshIdx}");
 
-                Matrix4x4 matrix;
+                Matrix4x4 transformMatrix = Matrix4x4.Identity;
+
                 if (!hasAnims)
                 {
                     AQuaternion rot = triMeshDataClass.anim_rot.ToAssimp();
@@ -203,14 +219,10 @@ namespace AODB.Encoding
                     var rotationMatrix = new Matrix4x4(rot.GetMatrix());
                     var translationMatrix = Matrix4x4.FromTranslation(pos);
 
-                    matrix = rotationMatrix * translationMatrix;
-                }
-                else
-                {
-                    matrix = Matrix4x4.Identity;
+                    transformMatrix = rotationMatrix * translationMatrix;
                 }
 
-                mesh.Vertices.AddRange(simpleMeshClass.Vertices.Select(x => matrix * x.Position.ToAssimp()));
+                mesh.Vertices.AddRange(simpleMeshClass.Vertices.Select(x => transformMatrix * x.Position.ToAssimp()));
                 mesh.Normals.AddRange(simpleMeshClass.Vertices.Select(x => x.Normal.ToAssimp()));
                 mesh.TextureCoordinateChannels[0].AddRange(simpleMeshClass.Vertices.Select(x => new AVector3(x.UVs.X, 1f-x.UVs.Y, 0)));
                 mesh.UVComponentCount[0] = 2;
