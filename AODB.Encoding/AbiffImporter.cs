@@ -156,7 +156,9 @@ namespace AODB.Encoding
                 tch_type = new uint[] { (uint)TextureChannelType.Diffuse },
                 tch_text = new int[] { rdbMesh.Members.IndexOf(texture) }
             };
-            deltaState.AddRenderStateType(D3DRenderStateType.D3DRS_SPECULARENABLE, 1);
+
+            if (material.ShininessStrength > 0)
+                deltaState.AddRenderStateType(D3DRenderStateType.D3DRS_SPECULARENABLE, 1);
 
             if (material.IsTwoSided)
                 deltaState.AddRenderStateType(D3DRenderStateType.D3DRS_CULLMODE, (int)D3DCULL.D3DCULL_NONE);

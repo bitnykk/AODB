@@ -255,6 +255,7 @@ namespace AODB.Encoding
             mat.ColorAmbient = materialClass.ambi.ToAssimp();
             mat.ColorEmissive = materialClass.emis.ToAssimp();
             mat.Shininess = materialClass.shin;
+            mat.ShininessStrength = materialClass.shin_str;
             mat.Opacity = materialClass.opac;
 
             if (materialClass.delta_state >= 0)
