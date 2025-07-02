@@ -55,6 +55,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RDBObjects\CATAnim_101003.cs" />
     <Compile Include="RDBObjects\IconTexture_1010008.cs" />
+    <Compile Include="RDBObjects\ItemObject_1000020.cs" />
     <Compile Include="RDBObjects\MonsterData_1040023.cs" />
     <Compile Include="RDBObjects\PlayfieldDynels_1000026.cs" />
     <Compile Include="RDBObjects\SkillTrickle_1000204.cs" />
@@ -71,8 +72,10 @@
     <Compile Include="RDBObjects\RDBMesh_1010001.cs" />
     <Compile Include="Structs\AOMaterial.cs" />
     <Compile Include="Structs\Color.cs" />
+    <Compile Include="Structs\Enums.cs" />
     <Compile Include="Structs\Matrix.cs" />
     <Compile Include="Structs\Quaternion.cs" />
+    <Compile Include="Structs\RequirementCriterion.cs" />
     <Compile Include="Structs\Vector2.cs" />
     <Compile Include="Structs\Vector3.cs" />
     <Compile Include="Structs\Vertex.cs" />
