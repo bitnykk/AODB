@@ -23,7 +23,8 @@ namespace AODB.Common.RDBObjects
         Icon = 1010008,
         WallTexture = 1010009,
         SkinTexture = 1010011,
-        MonsterData = 1040023
+        MonsterData = 1040023,
+        Unknown = 1010005
     }
 
     public abstract class RDBObject
