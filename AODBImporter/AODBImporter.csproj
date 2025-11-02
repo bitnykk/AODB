@@ -70,6 +70,10 @@
       <Project>{F952ABCF-9DDA-8314-7318-7AB9EE1DC134}</Project>
       <Name>AODB.Encoding</Name>
     </ProjectReference>
+    <ProjectReference Include="..\AODB\AODB.csproj">
+      <Project>{d1c4b7ff-67ac-44c5-8a48-23b4417cf068}</Project>
+      <Name>AODB</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\AssimpNet.5.0.0-beta1\build\AssimpNet.targets" Condition="Exists('..\packages\AssimpNet.5.0.0-beta1\build\AssimpNet.targets')" />
