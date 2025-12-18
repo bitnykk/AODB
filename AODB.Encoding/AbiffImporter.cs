@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using static AODB.Common.DbClasses.RDBMesh_t;
 using static AODB.Common.DbClasses.RDBMesh_t.FAFAnim_t;
 using AQuaternion = Assimp.Quaternion;
@@ -157,13 +158,26 @@ namespace AODB.Encoding
                 tch_text = new int[] { rdbMesh.Members.IndexOf(texture) }
             };
 
-            if (material.ShininessStrength > 0)
+            String myName = "";
+            Type myType = material.GetType();
+            IList<PropertyInfo> props = new List<PropertyInfo>(myType.GetProperties());
+            foreach (PropertyInfo prop in props)
+            {
+                object propValue = prop.GetValue(material, null);
+                if (prop.ToString() == "System.String Name")
+                {
+                    myName = propValue.ToString();
+                    Console.WriteLine(prop + ":" + propValue); // Material debug
+                }
+            }
+
+            if (myName.Contains("ShininessStrength"))
                 deltaState.AddRenderStateType(D3DRenderStateType.D3DRS_SPECULARENABLE, 1);
 
-            if (true) // material.IsTwoSided
+            if (myName.Contains("IsTwoSided"))
                 deltaState.AddRenderStateType(D3DRenderStateType.D3DRS_CULLMODE, (int)D3DCULL.D3DCULL_NONE);
 
-            if (material.Opacity < 1)
+            if (myName.Contains("Opacity"))
                 deltaState.AddRenderStateType(D3DRenderStateType.D3DRS_ALPHABLENDENABLE, 1);
 
             rdbMesh.Members.Add(deltaState);
